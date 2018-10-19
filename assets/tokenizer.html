@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>tokenized-text</title>
+
+    <style>
+        body {
+            padding: 0;
+            margin: 0;
+        }
+
+        .container {
+            display: flex;
+        }
+
+        .code {
+            white-space: pre;
+            font-family: monospace;
+            line-height: 28px;
+            padding: 0 16px;
+        }
+
+        ul.lines {
+            background-color: #ccc;
+            font-family: monospace;
+            font-weight: bold;
+            font-size: 12px;
+            padding: 0;
+            margin: 0;
+            list-style: none;
+        }
+
+        ul.lines li {
+            display: block;
+            min-width: 40px;
+            text-align: center;
+            height: 28px;
+            line-height: 28px;
+        }
+
+        strong {
+            display: inline-block;
+            padding: 2px 4px;
+            background-color: #eee;
+            border-radius: 2px;
+            font-size: 18px;
+            line-height: 18px;
+            margin-right: 4px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <ul class="lines"></ul>
+        <div class="code">$HTML_CONTENTS</div>
+    </div>
+
+    <script>
+        const tokenColors = {};
+        const textLines = $LINES;
+        const blueishColor = function(id, a=0.2) {
+            let r = id * 32416189277 % 128;
+            let g = id * 32416189321 % 256;
+            let b = 255;
+
+            return `rgba(${r}, ${g}, ${b}, ${a})`;
+        }
+
+        // add lines
+        const linesEl = document.querySelector('.lines')
+        for (let i=0; i<=textLines; i++) {
+            let li = document.createElement('li');
+            li.innerHTML = i+1;
+            linesEl.appendChild(li);
+        }
+
+        // colorize tokens
+        document.querySelectorAll('.code strong').forEach(el => {
+            if (!(el.className in tokenColors)) {
+                let id = el.className.split('-')[2];
+                tokenColors[el.className] = blueishColor(id);
+            }
+
+            let bgColor = tokenColors[el.className];
+            el.style.backgroundColor = bgColor;
+        });
+    </script>
+</body>
+</html>

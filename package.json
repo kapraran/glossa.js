@@ -1,0 +1,17 @@
+{
+  "name": "glossa-node",
+  "version": "0.0.1",
+  "description": "A glossa (γλώσσα) interpreter in Typescript",
+  "author": "Nikolaos Kapraras",
+  "license": "MIT",
+  "devDependencies": {
+    "@types/node": "^10.12.0",
+    "chevrotain": "^4.1.0",
+    "mocha": "^5.2.0"
+  },
+  "scripts": {
+    "tsc": "tsc",
+    "run-example": "tsc && node dist/main test/glossa/sample.glossa"
+  },
+  "dependencies": {}
+}
