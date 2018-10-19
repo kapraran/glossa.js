@@ -1,4 +1,4 @@
-import {tokens, tokenValues} from './tokens'
+import { tokens, tokenValues } from './tokens'
 import { Parser, TokenType } from 'chevrotain'
 
 class GlossaParser extends Parser {
@@ -6,6 +6,16 @@ class GlossaParser extends Parser {
         super(tokenValues)
         this.performSelfAnalysis()
     }
+
+    public script = this.RULE('script', () => {
+        this.SUBRULE(this.program)
+        this.MANY(() => {
+            this.OR([
+                { ALT: () => this.SUBRULE(this.procedure) },
+                { ALT: () => this.SUBRULE(this.func) }
+            ])
+        })
+    })
 
     public program = this.RULE('program', () => {
         this.CONSUME(tokens.Program)
@@ -67,7 +77,7 @@ class GlossaParser extends Parser {
             { ALT: () => this.CONSUME(tokens.IntegerVal) },
             { ALT: () => this.CONSUME(tokens.RealVal) },
             { ALT: () => this.CONSUME(tokens.StringVal) },
-            { ALT: () => this.CONSUME(tokens.BooleanVal) },
+            { ALT: () => this.CONSUME(tokens.BooleanVal) }
         ])
     })
 
@@ -81,6 +91,7 @@ class GlossaParser extends Parser {
             { ALT: () => this.SUBRULE(this.forStmt) },
             { ALT: () => this.SUBRULE(this.whileStmt) },
             { ALT: () => this.SUBRULE(this.doUntilStmt) },
+            { ALT: () => this.SUBRULE(this.procedureCallStmt) }
         ])
     })
 
@@ -110,11 +121,13 @@ class GlossaParser extends Parser {
 
     private unaryRelExpression = this.RULE('unaryRelExpression', () => {
         this.OR([
-            { ALT: () => {
-                this.CONSUME(tokens.Not)
-                this.SUBRULE(this.relExpression)
-            } },
-            { ALT: () => this.SUBRULE2(this.relExpression) },
+            {
+                ALT: () => {
+                    this.CONSUME(tokens.Not)
+                    this.SUBRULE(this.relExpression)
+                }
+            },
+            { ALT: () => this.SUBRULE2(this.relExpression) }
         ])
     })
 
@@ -123,7 +136,7 @@ class GlossaParser extends Parser {
         this.MANY(() => {
             this.OR([
                 { ALT: () => this.CONSUME(tokens.Equal) },
-                { ALT: () => this.CONSUME(tokens.RelOp) },
+                { ALT: () => this.CONSUME(tokens.RelOp) }
             ])
             this.SUBRULE(this.sumExpression)
         })
@@ -134,8 +147,8 @@ class GlossaParser extends Parser {
         this.MANY(() => {
             // this.CONSUME(tokens.SumOp)
             this.OR([
-                {ALT: () => this.CONSUME(tokens.Plus)},
-                {ALT: () => this.CONSUME(tokens.Minus)},
+                { ALT: () => this.CONSUME(tokens.Plus) },
+                { ALT: () => this.CONSUME(tokens.Minus) }
             ])
             this.SUBRULE(this.sumExpression)
         })
@@ -159,19 +172,21 @@ class GlossaParser extends Parser {
 
     private unaryExpression = this.RULE('unaryExpression', () => {
         this.OR([
-            { ALT: () => {
-                // this.CONSUME(tokens.UnaryOp)
-                this.CONSUME(tokens.Minus)
-                this.SUBRULE(this.unaryExpression)
-            } },
-            { ALT: () => this.SUBRULE2(this.factor) },
+            {
+                ALT: () => {
+                    // this.CONSUME(tokens.UnaryOp)
+                    this.CONSUME(tokens.Minus)
+                    this.SUBRULE(this.unaryExpression)
+                }
+            },
+            { ALT: () => this.SUBRULE2(this.factor) }
         ])
     })
 
     private factor = this.RULE('factor', () => {
         this.OR([
             { ALT: () => this.SUBRULE(this.immutable) },
-            { ALT: () => this.SUBRULE(this.mutable) },
+            { ALT: () => this.SUBRULE(this.mutable) }
         ])
     })
 
@@ -185,17 +200,24 @@ class GlossaParser extends Parser {
     })
 
     private immutable = this.RULE('immutable', () => {
-        // TODO add function call
         this.OR([
-            { ALT: () => {
-                this.CONSUME(tokens.LParen)
-                this.SUBRULE(this.expression)
-                this.CONSUME(tokens.RParen)
-            } },
+            {
+                ALT: () => {
+                    this.CONSUME(tokens.LParen)
+                    this.SUBRULE(this.expression)
+                    this.CONSUME(tokens.RParen)
+                }
+            },
+            {
+                ALT: () => {
+                    this.CONSUME(tokens.Identifier)
+                    this.SUBRULE(this.args)
+                }
+            },
             { ALT: () => this.CONSUME(tokens.IntegerVal) },
             { ALT: () => this.CONSUME(tokens.RealVal) },
             { ALT: () => this.CONSUME(tokens.StringVal) },
-            { ALT: () => this.CONSUME(tokens.BooleanVal) },
+            { ALT: () => this.CONSUME(tokens.BooleanVal) }
         ])
     })
 
@@ -285,13 +307,81 @@ class GlossaParser extends Parser {
         this.SUBRULE(this.expression)
     })
 
+    private procedure = this.RULE('procedure', () => {
+        this.CONSUME(tokens.Procedure)
+        this.CONSUME(tokens.Identifier)
+        this.SUBRULE(this.parameters)
+        this.OPTION(() => {
+            this.AT_LEAST_ONE(() => {
+                this.OR([
+                    { ALT: () => this.SUBRULE(this.constDeclList) },
+                    { ALT: () => this.SUBRULE(this.varDeclaration) }
+                ])
+            })
+        })
+        this.SUBRULE(this.procedureBody)
+    })
+
+    private func = this.RULE('func', () => {
+        this.CONSUME(tokens.Function)
+        this.CONSUME(tokens.Identifier)
+        this.SUBRULE(this.parameters)
+        this.CONSUME(tokens.Colon)
+        this.CONSUME(tokens.DeclRetTypeSpecifier)
+        this.OPTION(() => {
+            this.AT_LEAST_ONE(() => {
+                this.OR([
+                    { ALT: () => this.SUBRULE(this.constDeclList) },
+                    { ALT: () => this.SUBRULE(this.varDeclaration) }
+                ])
+            })
+        })
+        this.SUBRULE(this.funcBody)
+    })
+
+    private parameters = this.RULE('parameters', () => {
+        this.CONSUME(tokens.LParen)
+        this.MANY_SEP({
+            SEP: tokens.Comma,
+            DEF: () => this.CONSUME(tokens.Identifier)
+        })
+        this.CONSUME(tokens.RParen)
+    })
+
+    private procedureBody = this.RULE('procedureBody', () => {
+        this.CONSUME(tokens.Start)
+        this.AT_LEAST_ONE(() => this.SUBRULE(this.statement))
+        this.CONSUME(tokens.EndProcedure)
+    })
+
+    private procedureCallStmt = this.RULE('procedureCallStmt', () => {
+        this.CONSUME(tokens.Call)
+        this.CONSUME(tokens.Identifier)
+        this.SUBRULE(this.args)
+    })
+
+    private args = this.RULE('args', () => {
+        this.CONSUME(tokens.LParen)
+        this.MANY_SEP({
+            SEP: tokens.Comma,
+            DEF: () => this.SUBRULE(this.expression)
+        })
+        this.CONSUME(tokens.RParen)
+    })
+
+    private funcBody = this.RULE('funcBody', () => {
+        this.CONSUME(tokens.Start)
+        this.AT_LEAST_ONE(() => this.SUBRULE(this.statement))
+        this.CONSUME(tokens.EndFunc)
+    })
+
     private stringConcat = this.RULE('stringConcat', () => {
         this.AT_LEAST_ONE_SEP({
             SEP: tokens.Comma,
             DEF: () => {
                 this.OR([
                     { ALT: () => this.CONSUME(tokens.StringVal) },
-                    { ALT: () => this.CONSUME(tokens.Identifier) },
+                    { ALT: () => this.CONSUME(tokens.Identifier) }
                 ])
             }
         })
