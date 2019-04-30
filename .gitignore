@@ -9,4 +9,5 @@ yarn.lock
 yarn-error.log
 
 # misc
-generated_diagrams.html
+generated-diagrams.html
+tokenized-source.html

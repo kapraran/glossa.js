@@ -1,9 +1,9 @@
-import * as path from 'path'
-import * as fs from 'fs'
-import GlossaParser from '../parser'
+import { resolve } from 'path'
+import { writeFileSync } from 'fs'
 import { createSyntaxDiagramsCode } from 'chevrotain'
+import GlossaParser from '../parser'
 
-const filename = 'generated_diagrams.html'
+const filename = 'generated-diagrams.html'
 
 // extract the serialized grammar
 const parserInstance = new GlossaParser()
@@ -13,5 +13,5 @@ const serializedGrammar = parserInstance.getSerializedGastProductions()
 const htmlCode = createSyntaxDiagramsCode(serializedGrammar)
 
 // save the HTML code into a file
-const outFilepath = path.resolve(process.cwd(), filename)
-fs.writeFileSync(outFilepath, htmlCode)
+const outFilepath = resolve(process.cwd(), filename)
+writeFileSync(outFilepath, htmlCode)
