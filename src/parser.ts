@@ -1,10 +1,13 @@
 import { tokens, tokenValues } from './tokens'
-import { Parser, TokenType } from 'chevrotain'
+import { Parser, Lexer, IToken } from 'chevrotain'
+import { readFileSync } from 'fs'
 
 class GlossaParser extends Parser {
-  constructor() {
+  constructor(inputTokens: Array<IToken> | null = null) {
     super(tokenValues)
     this.performSelfAnalysis()
+
+    if (inputTokens != null) this.input = inputTokens
   }
 
   public script = this.RULE('script', () => {
@@ -17,7 +20,7 @@ class GlossaParser extends Parser {
     })
   })
 
-  public program = this.RULE('program', () => {
+  private program = this.RULE('program', () => {
     this.CONSUME(tokens.Program)
     this.CONSUME(tokens.Identifier)
     this.OPTION(() => {
@@ -56,7 +59,10 @@ class GlossaParser extends Parser {
     this.CONSUME(tokens.Identifier)
     this.OPTION(() => {
       this.CONSUME(tokens.LSquare)
-      this.CONSUME(tokens.IntegerVal)
+      this.OR([
+        { ALT: () => this.CONSUME(tokens.IntegerVal) },
+        { ALT: () => this.CONSUME1(tokens.Identifier) }
+      ])
       this.CONSUME(tokens.RSquare)
     })
   })
@@ -99,12 +105,12 @@ class GlossaParser extends Parser {
     this.CONSUME(tokens.Read)
     this.AT_LEAST_ONE_SEP({
       SEP: tokens.Comma,
-      DEF: () => this.CONSUME(tokens.Identifier)
+      DEF: () => this.SUBRULE(this.mutable)
     })
   })
 
   private expression = this.RULE('expression', () => {
-    this.SUBRULE2(this.andExpression)
+    this.SUBRULE(this.andExpression)
     this.MANY(() => {
       this.CONSUME(tokens.Or)
       this.SUBRULE(this.expression)
@@ -112,7 +118,7 @@ class GlossaParser extends Parser {
   })
 
   private andExpression = this.RULE('andExpression', () => {
-    this.SUBRULE2(this.unaryRelExpression)
+    this.SUBRULE(this.unaryRelExpression)
     this.MANY(() => {
       this.CONSUME(tokens.And)
       this.SUBRULE(this.andExpression)
@@ -132,18 +138,18 @@ class GlossaParser extends Parser {
   })
 
   private relExpression = this.RULE('relExpression', () => {
-    this.SUBRULE2(this.sumExpression)
+    this.SUBRULE(this.sumExpression)
     this.MANY(() => {
       this.OR([
         { ALT: () => this.CONSUME(tokens.Equal) },
         { ALT: () => this.CONSUME(tokens.RelOp) }
       ])
-      this.SUBRULE(this.sumExpression)
+      this.SUBRULE1(this.sumExpression)
     })
   })
 
   private sumExpression = this.RULE('sumExpression', () => {
-    this.SUBRULE2(this.term)
+    this.SUBRULE(this.term)
     this.MANY(() => {
       // this.CONSUME(tokens.SumOp)
       this.OR([
@@ -154,7 +160,7 @@ class GlossaParser extends Parser {
     })
   })
 
-  private IntOrRange = this.RULE('IntOrRange', () => {
+  private intOrRange = this.RULE('intOrRange', () => {
     this.CONSUME(tokens.IntegerVal)
     this.OPTION(() => {
       this.CONSUME(tokens.DbDots)
@@ -224,7 +230,7 @@ class GlossaParser extends Parser {
   private assignStmt = this.RULE('assignStmt', () => {
     this.SUBRULE(this.mutable)
     this.CONSUME(tokens.AssignOp)
-    this.SUBRULE2(this.expression)
+    this.SUBRULE(this.expression)
   })
 
   private writeStmt = this.RULE('writeStmt', () => {
@@ -262,7 +268,7 @@ class GlossaParser extends Parser {
     this.MANY(() => this.SUBRULE(this.caseStmt))
     this.OPTION(() => {
       this.CONSUME1(tokens.Select)
-      this.CONSUME1(tokens.Else)
+      this.CONSUME(tokens.Else)
       this.AT_LEAST_ONE(() => this.SUBRULE(this.statement))
     })
     this.CONSUME2(tokens.EndSelect)
@@ -272,7 +278,7 @@ class GlossaParser extends Parser {
     this.CONSUME(tokens.Case)
     this.AT_LEAST_ONE_SEP({
       SEP: tokens.Comma,
-      DEF: () => this.SUBRULE(this.IntOrRange)
+      DEF: () => this.SUBRULE(this.intOrRange)
     })
     this.AT_LEAST_ONE(() => this.SUBRULE(this.statement))
   })
@@ -386,6 +392,28 @@ class GlossaParser extends Parser {
       }
     })
   })
+
+  /**
+   * Creates a parser instance using the inputStr as the input
+   *
+   * @param inputStr
+   */
+  static createFromString(inputStr: string): GlossaParser {
+    // tokenize input
+    const glossaLexer = new Lexer(tokenValues)
+    const lexerResult = glossaLexer.tokenize(inputStr)
+
+    return new GlossaParser(lexerResult.tokens)
+  }
+
+  /**
+   * Creates a parser instance using the file contents as the input
+   *
+   * @param filepath
+   */
+  static createFromFile(filepath: string): GlossaParser {
+    return GlossaParser.createFromString(readFileSync(filepath, 'utf8'))
+  }
 }
 
 export default GlossaParser

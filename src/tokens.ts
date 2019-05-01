@@ -16,7 +16,7 @@ tokens.WhiteSpace = createToken({
 
 tokens.StringVal = createToken({
   name: 'StringVal',
-  pattern: /"(:?[^\\"\n\r]+|\\(:?[bfnrtv"\\/]|u[0-9a-fA-F]{4}))*"/
+  pattern: /("(:?[^\\"\n\r]+|\\(:?[bfnrtv"\\/]|u[0-9a-fA-F]{4}))*"|'(:?[^\\'\n\r]+|\\(:?[bfnrtv"\\/]|u[0-9a-fA-F]{4}))*')/
 })
 
 tokens.RealVal = createToken({
@@ -267,13 +267,13 @@ tokens.Minus = createToken({
 
 tokens.MulOp = createToken({
   name: 'MulOp',
-  pattern: /(\*|\/|DIV|MOD)/,
+  pattern: /(\*|\/|\^|DIV|MOD)/,
   longer_alt: tokens.Identifier
 })
 
 tokens.Identifier = createToken({
   name: 'Identifier',
-  pattern: /[a-zA-Z\u0370-\u03ff\u1f00-\u1fff]([a-zA-Z\u0370-\u03ff\u1f00-\u1fff]|\d)*/
+  pattern: /[_a-zA-Z\u0370-\u03ff\u1f00-\u1fff]([_a-zA-Z\u0370-\u03ff\u1f00-\u1fff]|\d)*/
 })
 
 export const tokenValues = Object.keys(tokens).map((key) => tokens[key])
