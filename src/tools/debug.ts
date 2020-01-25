@@ -21,9 +21,7 @@ export const debugTokenizer = function(
           token.startOffset - currentOffset
         )
 
-      htmlContents += `<strong class="token-id-${token.tokenTypeIdx}">${
-        token.image
-      }</strong>`
+      htmlContents += `<strong class="token-id-${token.tokenTypeIdx}">${token.image}</strong>`
       currentOffset =
         (token.endOffset || token.startOffset + token.image.length) + 1
       lines = token.endLine || lines

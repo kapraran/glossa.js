@@ -1,10 +1,10 @@
 import { readFile } from 'fs'
 import GlossaParser from './parser'
 import { Lexer } from 'chevrotain'
-import { tokens, tokenValues } from './tokens'
+import { tokenMap, tokenList } from './tokens'
 import { debugTokenizer } from './tools/debug'
 
-const glossaLexer = new Lexer(tokenValues)
+const glossaLexer = new Lexer(tokenList)
 
 readFile(process.argv[2], 'utf8', (err, text) => {
   if (err) throw err

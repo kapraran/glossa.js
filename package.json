@@ -7,7 +7,7 @@
   "devDependencies": {
     "@types/mocha": "^5.2.6",
     "@types/node": "^10.12.0",
-    "chevrotain": "^4.1.0",
+    "chevrotain": "^6.0.0",
     "mocha": "^5.2.0",
     "prettier": "^1.14.3",
     "ts-node": "^8.1.0",
@@ -15,8 +15,8 @@
   },
   "scripts": {
     "tsc": "tsc",
-    "run-example": "tsc && node dist/main test/glossa/sample.glossa",
-    "prettier": "prettier --write src/**/*.ts",
+    "example": "tsc && node dist/main test/glossa/sample.glossa",
+    "prettier": "prettier --write 'src/**/*.{ts, js}'",
     "diagram": "tsc && node dist/tools/gen-diagram",
     "test": "mocha --require ts-node/register test/**/*.test.ts"
   }

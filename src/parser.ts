@@ -1,10 +1,10 @@
-import { tokens, tokenValues } from './tokens'
+import { tokenMap, tokenList } from './tokens'
 import { Parser, Lexer, IToken } from 'chevrotain'
 import { readFileSync } from 'fs'
 
 class GlossaParser extends Parser {
   constructor(inputTokens: Array<IToken> | null = null) {
-    super(tokenValues)
+    super(tokenList)
     this.performSelfAnalysis()
 
     if (inputTokens != null) this.input = inputTokens
@@ -21,8 +21,8 @@ class GlossaParser extends Parser {
   })
 
   private program = this.RULE('program', () => {
-    this.CONSUME(tokens.Program)
-    this.CONSUME(tokens.Identifier)
+    this.CONSUME(tokenMap.Program)
+    this.CONSUME(tokenMap.Identifier)
     this.OPTION(() => {
       this.AT_LEAST_ONE(() => {
         this.OR([
@@ -35,55 +35,55 @@ class GlossaParser extends Parser {
   })
 
   private programBody = this.RULE('programBody', () => {
-    this.CONSUME(tokens.Start)
+    this.CONSUME(tokenMap.Start)
     this.AT_LEAST_ONE(() => this.SUBRULE(this.statement))
-    this.CONSUME(tokens.End)
-    this.CONSUME(tokens.Identifier)
+    this.CONSUME(tokenMap.End)
+    this.CONSUME(tokenMap.Identifier)
   })
 
   private varDeclaration = this.RULE('varDeclaration', () => {
-    this.CONSUME(tokens.Variables)
+    this.CONSUME(tokenMap.Variables)
     this.AT_LEAST_ONE(() => this.SUBRULE(this.typedVarDeclList))
   })
 
   private typedVarDeclList = this.RULE('typedVarDeclList', () => {
-    this.CONSUME(tokens.DeclTypeSpecifier)
-    this.CONSUME(tokens.Colon)
+    this.CONSUME(tokenMap.DeclTypeSpecifier)
+    this.CONSUME(tokenMap.Colon)
     this.AT_LEAST_ONE_SEP({
-      SEP: tokens.Comma,
+      SEP: tokenMap.Comma,
       DEF: () => this.SUBRULE(this.value)
     })
   })
 
   private value = this.RULE('value', () => {
-    this.CONSUME(tokens.Identifier)
+    this.CONSUME(tokenMap.Identifier)
     this.OPTION(() => {
-      this.CONSUME(tokens.LSquare)
+      this.CONSUME(tokenMap.LSquare)
       this.OR([
-        { ALT: () => this.CONSUME(tokens.IntegerVal) },
-        { ALT: () => this.CONSUME1(tokens.Identifier) }
+        { ALT: () => this.CONSUME(tokenMap.IntegerVal) },
+        { ALT: () => this.CONSUME1(tokenMap.Identifier) }
       ])
-      this.CONSUME(tokens.RSquare)
+      this.CONSUME(tokenMap.RSquare)
     })
   })
 
   private constDeclList = this.RULE('constDeclList', () => {
-    this.CONSUME(tokens.Constants)
+    this.CONSUME(tokenMap.Constants)
     this.AT_LEAST_ONE(() => this.SUBRULE(this.constDecl))
   })
 
   private constDecl = this.RULE('constDecl', () => {
-    this.CONSUME(tokens.Identifier)
-    this.CONSUME(tokens.Equal)
+    this.CONSUME(tokenMap.Identifier)
+    this.CONSUME(tokenMap.Equal)
     this.SUBRULE(this.constVal)
   })
 
   private constVal = this.RULE('constVal', () => {
     this.OR([
-      { ALT: () => this.CONSUME(tokens.IntegerVal) },
-      { ALT: () => this.CONSUME(tokens.RealVal) },
-      { ALT: () => this.CONSUME(tokens.StringVal) },
-      { ALT: () => this.CONSUME(tokens.BooleanVal) }
+      { ALT: () => this.CONSUME(tokenMap.IntegerVal) },
+      { ALT: () => this.CONSUME(tokenMap.RealVal) },
+      { ALT: () => this.CONSUME(tokenMap.StringVal) },
+      { ALT: () => this.CONSUME(tokenMap.BooleanVal) }
     ])
   })
 
@@ -102,9 +102,9 @@ class GlossaParser extends Parser {
   })
 
   private readStmt = this.RULE('readStmt', () => {
-    this.CONSUME(tokens.Read)
+    this.CONSUME(tokenMap.Read)
     this.AT_LEAST_ONE_SEP({
-      SEP: tokens.Comma,
+      SEP: tokenMap.Comma,
       DEF: () => this.SUBRULE(this.mutable)
     })
   })
@@ -112,7 +112,7 @@ class GlossaParser extends Parser {
   private expression = this.RULE('expression', () => {
     this.SUBRULE(this.andExpression)
     this.MANY(() => {
-      this.CONSUME(tokens.Or)
+      this.CONSUME(tokenMap.Or)
       this.SUBRULE(this.expression)
     })
   })
@@ -120,7 +120,7 @@ class GlossaParser extends Parser {
   private andExpression = this.RULE('andExpression', () => {
     this.SUBRULE(this.unaryRelExpression)
     this.MANY(() => {
-      this.CONSUME(tokens.And)
+      this.CONSUME(tokenMap.And)
       this.SUBRULE(this.andExpression)
     })
   })
@@ -129,7 +129,7 @@ class GlossaParser extends Parser {
     this.OR([
       {
         ALT: () => {
-          this.CONSUME(tokens.Not)
+          this.CONSUME(tokenMap.Not)
           this.SUBRULE(this.relExpression)
         }
       },
@@ -141,8 +141,8 @@ class GlossaParser extends Parser {
     this.SUBRULE(this.sumExpression)
     this.MANY(() => {
       this.OR([
-        { ALT: () => this.CONSUME(tokens.Equal) },
-        { ALT: () => this.CONSUME(tokens.RelOp) }
+        { ALT: () => this.CONSUME(tokenMap.Equal) },
+        { ALT: () => this.CONSUME(tokenMap.RelOp) }
       ])
       this.SUBRULE1(this.sumExpression)
     })
@@ -151,27 +151,27 @@ class GlossaParser extends Parser {
   private sumExpression = this.RULE('sumExpression', () => {
     this.SUBRULE(this.term)
     this.MANY(() => {
-      // this.CONSUME(tokens.SumOp)
+      // this.CONSUME(tokenMap.SumOp)
       this.OR([
-        { ALT: () => this.CONSUME(tokens.Plus) },
-        { ALT: () => this.CONSUME(tokens.Minus) }
+        { ALT: () => this.CONSUME(tokenMap.Plus) },
+        { ALT: () => this.CONSUME(tokenMap.Minus) }
       ])
       this.SUBRULE(this.sumExpression)
     })
   })
 
   private intOrRange = this.RULE('intOrRange', () => {
-    this.CONSUME(tokens.IntegerVal)
+    this.CONSUME(tokenMap.IntegerVal)
     this.OPTION(() => {
-      this.CONSUME(tokens.DbDots)
-      this.CONSUME1(tokens.IntegerVal)
+      this.CONSUME(tokenMap.DbDots)
+      this.CONSUME1(tokenMap.IntegerVal)
     })
   })
 
   private term = this.RULE('term', () => {
     this.SUBRULE(this.unaryExpression)
     this.MANY(() => {
-      this.CONSUME(tokens.MulOp)
+      this.CONSUME(tokenMap.MulOp)
       this.SUBRULE(this.term)
     })
   })
@@ -180,8 +180,8 @@ class GlossaParser extends Parser {
     this.OR([
       {
         ALT: () => {
-          // this.CONSUME(tokens.UnaryOp)
-          this.CONSUME(tokens.Minus)
+          // this.CONSUME(tokenMap.UnaryOp)
+          this.CONSUME(tokenMap.Minus)
           this.SUBRULE(this.unaryExpression)
         }
       },
@@ -197,11 +197,11 @@ class GlossaParser extends Parser {
   })
 
   private mutable = this.RULE('mutable', () => {
-    this.CONSUME(tokens.Identifier)
+    this.CONSUME(tokenMap.Identifier)
     this.OPTION(() => {
-      this.CONSUME(tokens.LSquare)
+      this.CONSUME(tokenMap.LSquare)
       this.SUBRULE(this.expression)
-      this.CONSUME(tokens.RSquare)
+      this.CONSUME(tokenMap.RSquare)
     })
   })
 
@@ -209,113 +209,113 @@ class GlossaParser extends Parser {
     this.OR([
       {
         ALT: () => {
-          this.CONSUME(tokens.LParen)
+          this.CONSUME(tokenMap.LParen)
           this.SUBRULE(this.expression)
-          this.CONSUME(tokens.RParen)
+          this.CONSUME(tokenMap.RParen)
         }
       },
       {
         ALT: () => {
-          this.CONSUME(tokens.Identifier)
+          this.CONSUME(tokenMap.Identifier)
           this.SUBRULE(this.args)
         }
       },
-      { ALT: () => this.CONSUME(tokens.IntegerVal) },
-      { ALT: () => this.CONSUME(tokens.RealVal) },
-      { ALT: () => this.CONSUME(tokens.StringVal) },
-      { ALT: () => this.CONSUME(tokens.BooleanVal) }
+      { ALT: () => this.CONSUME(tokenMap.IntegerVal) },
+      { ALT: () => this.CONSUME(tokenMap.RealVal) },
+      { ALT: () => this.CONSUME(tokenMap.StringVal) },
+      { ALT: () => this.CONSUME(tokenMap.BooleanVal) }
     ])
   })
 
   private assignStmt = this.RULE('assignStmt', () => {
     this.SUBRULE(this.mutable)
-    this.CONSUME(tokens.AssignOp)
+    this.CONSUME(tokenMap.AssignOp)
     this.SUBRULE(this.expression)
   })
 
   private writeStmt = this.RULE('writeStmt', () => {
-    this.CONSUME(tokens.Write)
+    this.CONSUME(tokenMap.Write)
     this.AT_LEAST_ONE_SEP({
-      SEP: tokens.Comma,
+      SEP: tokenMap.Comma,
       DEF: () => this.SUBRULE(this.expression)
     })
   })
 
   private ifStmt = this.RULE('ifStmt', () => {
-    this.CONSUME(tokens.If)
+    this.CONSUME(tokenMap.If)
     // TODO some way to force conditional
     this.SUBRULE(this.expression)
-    this.CONSUME(tokens.Then)
+    this.CONSUME(tokenMap.Then)
     this.AT_LEAST_ONE(() => this.SUBRULE(this.statement))
     this.MANY(() => this.SUBRULE(this.elseIfStmt))
     this.OPTION(() => {
-      this.CONSUME(tokens.Else)
+      this.CONSUME(tokenMap.Else)
       this.AT_LEAST_ONE1(() => this.SUBRULE1(this.statement))
     })
-    this.CONSUME(tokens.EndIf)
+    this.CONSUME(tokenMap.EndIf)
   })
 
   private elseIfStmt = this.RULE('elseIfStmt', () => {
-    this.CONSUME(tokens.ElseIf)
+    this.CONSUME(tokenMap.ElseIf)
     this.SUBRULE(this.expression)
-    this.CONSUME(tokens.Then)
+    this.CONSUME(tokenMap.Then)
     this.AT_LEAST_ONE(() => this.SUBRULE(this.statement))
   })
 
   private selectStmt = this.RULE('selectStmt', () => {
-    this.CONSUME(tokens.Select)
+    this.CONSUME(tokenMap.Select)
     this.SUBRULE(this.expression)
     this.MANY(() => this.SUBRULE(this.caseStmt))
     this.OPTION(() => {
-      this.CONSUME1(tokens.Select)
-      this.CONSUME(tokens.Else)
+      this.CONSUME1(tokenMap.Select)
+      this.CONSUME(tokenMap.Else)
       this.AT_LEAST_ONE(() => this.SUBRULE(this.statement))
     })
-    this.CONSUME2(tokens.EndSelect)
+    this.CONSUME2(tokenMap.EndSelect)
   })
 
   private caseStmt = this.RULE('caseStmt', () => {
-    this.CONSUME(tokens.Case)
+    this.CONSUME(tokenMap.Case)
     this.AT_LEAST_ONE_SEP({
-      SEP: tokens.Comma,
+      SEP: tokenMap.Comma,
       DEF: () => this.SUBRULE(this.intOrRange)
     })
     this.AT_LEAST_ONE(() => this.SUBRULE(this.statement))
   })
 
   private forStmt = this.RULE('forStmt', () => {
-    this.CONSUME(tokens.For)
-    this.CONSUME(tokens.Identifier)
-    this.CONSUME(tokens.From)
+    this.CONSUME(tokenMap.For)
+    this.CONSUME(tokenMap.Identifier)
+    this.CONSUME(tokenMap.From)
     this.SUBRULE(this.expression)
-    this.CONSUME(tokens.Until)
+    this.CONSUME(tokenMap.Until)
     this.SUBRULE1(this.expression)
     this.OPTION(() => {
-      this.CONSUME(tokens.Step)
+      this.CONSUME(tokenMap.Step)
       this.SUBRULE2(this.expression)
     })
     this.AT_LEAST_ONE(() => this.SUBRULE(this.statement))
-    this.CONSUME(tokens.EndRepeat)
+    this.CONSUME(tokenMap.EndRepeat)
   })
 
   private whileStmt = this.RULE('whileStmt', () => {
-    this.CONSUME(tokens.While)
+    this.CONSUME(tokenMap.While)
     this.SUBRULE(this.expression)
-    this.CONSUME(tokens.Repeat)
+    this.CONSUME(tokenMap.Repeat)
     this.AT_LEAST_ONE(() => this.SUBRULE(this.statement))
-    this.CONSUME(tokens.EndRepeat)
+    this.CONSUME(tokenMap.EndRepeat)
   })
 
   private doUntilStmt = this.RULE('doUntilStmt', () => {
-    this.CONSUME(tokens.StartRepeat)
+    this.CONSUME(tokenMap.StartRepeat)
     this.AT_LEAST_ONE(() => this.SUBRULE(this.statement))
-    this.CONSUME(tokens.DoUntil)
+    this.CONSUME(tokenMap.DoUntil)
     this.SUBRULE(this.expression)
   })
 
   private procedure = this.RULE('procedure', () => {
-    this.CONSUME(tokens.Procedure)
-    this.CONSUME(tokens.Identifier)
+    this.CONSUME(tokenMap.Procedure)
+    this.CONSUME(tokenMap.Identifier)
     this.SUBRULE(this.parameters)
     this.OPTION(() => {
       this.AT_LEAST_ONE(() => {
@@ -329,11 +329,11 @@ class GlossaParser extends Parser {
   })
 
   private func = this.RULE('func', () => {
-    this.CONSUME(tokens.Function)
-    this.CONSUME(tokens.Identifier)
+    this.CONSUME(tokenMap.Function)
+    this.CONSUME(tokenMap.Identifier)
     this.SUBRULE(this.parameters)
-    this.CONSUME(tokens.Colon)
-    this.CONSUME(tokens.DeclRetTypeSpecifier)
+    this.CONSUME(tokenMap.Colon)
+    this.CONSUME(tokenMap.DeclRetTypeSpecifier)
     this.OPTION(() => {
       this.AT_LEAST_ONE(() => {
         this.OR([
@@ -346,48 +346,48 @@ class GlossaParser extends Parser {
   })
 
   private parameters = this.RULE('parameters', () => {
-    this.CONSUME(tokens.LParen)
+    this.CONSUME(tokenMap.LParen)
     this.MANY_SEP({
-      SEP: tokens.Comma,
-      DEF: () => this.CONSUME(tokens.Identifier)
+      SEP: tokenMap.Comma,
+      DEF: () => this.CONSUME(tokenMap.Identifier)
     })
-    this.CONSUME(tokens.RParen)
+    this.CONSUME(tokenMap.RParen)
   })
 
   private procedureBody = this.RULE('procedureBody', () => {
-    this.CONSUME(tokens.Start)
+    this.CONSUME(tokenMap.Start)
     this.AT_LEAST_ONE(() => this.SUBRULE(this.statement))
-    this.CONSUME(tokens.EndProcedure)
+    this.CONSUME(tokenMap.EndProcedure)
   })
 
   private procedureCallStmt = this.RULE('procedureCallStmt', () => {
-    this.CONSUME(tokens.Call)
-    this.CONSUME(tokens.Identifier)
+    this.CONSUME(tokenMap.Call)
+    this.CONSUME(tokenMap.Identifier)
     this.SUBRULE(this.args)
   })
 
   private args = this.RULE('args', () => {
-    this.CONSUME(tokens.LParen)
+    this.CONSUME(tokenMap.LParen)
     this.MANY_SEP({
-      SEP: tokens.Comma,
+      SEP: tokenMap.Comma,
       DEF: () => this.SUBRULE(this.expression)
     })
-    this.CONSUME(tokens.RParen)
+    this.CONSUME(tokenMap.RParen)
   })
 
   private funcBody = this.RULE('funcBody', () => {
-    this.CONSUME(tokens.Start)
+    this.CONSUME(tokenMap.Start)
     this.AT_LEAST_ONE(() => this.SUBRULE(this.statement))
-    this.CONSUME(tokens.EndFunc)
+    this.CONSUME(tokenMap.EndFunc)
   })
 
   private stringConcat = this.RULE('stringConcat', () => {
     this.AT_LEAST_ONE_SEP({
-      SEP: tokens.Comma,
+      SEP: tokenMap.Comma,
       DEF: () => {
         this.OR([
-          { ALT: () => this.CONSUME(tokens.StringVal) },
-          { ALT: () => this.CONSUME(tokens.Identifier) }
+          { ALT: () => this.CONSUME(tokenMap.StringVal) },
+          { ALT: () => this.CONSUME(tokenMap.Identifier) }
         ])
       }
     })
@@ -400,7 +400,7 @@ class GlossaParser extends Parser {
    */
   static createFromString(inputStr: string): GlossaParser {
     // tokenize input
-    const glossaLexer = new Lexer(tokenValues)
+    const glossaLexer = new Lexer(tokenList)
     const lexerResult = glossaLexer.tokenize(inputStr)
 
     return new GlossaParser(lexerResult.tokens)
