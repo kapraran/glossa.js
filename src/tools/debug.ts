@@ -2,7 +2,7 @@ import { writeFileSync, readFileSync } from 'fs'
 import { resolve } from 'path'
 import { ILexingResult } from 'chevrotain'
 
-export const debugTokenizer = function(
+export const debugTokenizer = function (
   text: string,
   lexerResult: ILexingResult,
   toHTML: boolean = false

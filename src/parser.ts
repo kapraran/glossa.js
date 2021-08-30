@@ -15,7 +15,7 @@ class GlossaParser extends Parser {
     this.MANY(() => {
       this.OR([
         { ALT: () => this.SUBRULE(this.procedure) },
-        { ALT: () => this.SUBRULE(this.func) }
+        { ALT: () => this.SUBRULE(this.func) },
       ])
     })
   })
@@ -27,7 +27,7 @@ class GlossaParser extends Parser {
       this.AT_LEAST_ONE(() => {
         this.OR([
           { ALT: () => this.SUBRULE(this.constDeclList) },
-          { ALT: () => this.SUBRULE(this.varDeclaration) }
+          { ALT: () => this.SUBRULE(this.varDeclaration) },
         ])
       })
     })
@@ -51,7 +51,7 @@ class GlossaParser extends Parser {
     this.CONSUME(tokenMap.Colon)
     this.AT_LEAST_ONE_SEP({
       SEP: tokenMap.Comma,
-      DEF: () => this.SUBRULE(this.value)
+      DEF: () => this.SUBRULE(this.value),
     })
   })
 
@@ -61,7 +61,7 @@ class GlossaParser extends Parser {
       this.CONSUME(tokenMap.LSquare)
       this.OR([
         { ALT: () => this.CONSUME(tokenMap.IntegerVal) },
-        { ALT: () => this.CONSUME1(tokenMap.Identifier) }
+        { ALT: () => this.CONSUME1(tokenMap.Identifier) },
       ])
       this.CONSUME(tokenMap.RSquare)
     })
@@ -83,7 +83,7 @@ class GlossaParser extends Parser {
       { ALT: () => this.CONSUME(tokenMap.IntegerVal) },
       { ALT: () => this.CONSUME(tokenMap.RealVal) },
       { ALT: () => this.CONSUME(tokenMap.StringVal) },
-      { ALT: () => this.CONSUME(tokenMap.BooleanVal) }
+      { ALT: () => this.CONSUME(tokenMap.BooleanVal) },
     ])
   })
 
@@ -97,7 +97,7 @@ class GlossaParser extends Parser {
       { ALT: () => this.SUBRULE(this.forStmt) },
       { ALT: () => this.SUBRULE(this.whileStmt) },
       { ALT: () => this.SUBRULE(this.doUntilStmt) },
-      { ALT: () => this.SUBRULE(this.procedureCallStmt) }
+      { ALT: () => this.SUBRULE(this.procedureCallStmt) },
     ])
   })
 
@@ -105,7 +105,7 @@ class GlossaParser extends Parser {
     this.CONSUME(tokenMap.Read)
     this.AT_LEAST_ONE_SEP({
       SEP: tokenMap.Comma,
-      DEF: () => this.SUBRULE(this.mutable)
+      DEF: () => this.SUBRULE(this.mutable),
     })
   })
 
@@ -131,9 +131,9 @@ class GlossaParser extends Parser {
         ALT: () => {
           this.CONSUME(tokenMap.Not)
           this.SUBRULE(this.relExpression)
-        }
+        },
       },
-      { ALT: () => this.SUBRULE2(this.relExpression) }
+      { ALT: () => this.SUBRULE2(this.relExpression) },
     ])
   })
 
@@ -142,7 +142,7 @@ class GlossaParser extends Parser {
     this.MANY(() => {
       this.OR([
         { ALT: () => this.CONSUME(tokenMap.Equal) },
-        { ALT: () => this.CONSUME(tokenMap.RelOp) }
+        { ALT: () => this.CONSUME(tokenMap.RelOp) },
       ])
       this.SUBRULE1(this.sumExpression)
     })
@@ -154,7 +154,7 @@ class GlossaParser extends Parser {
       // this.CONSUME(tokenMap.SumOp)
       this.OR([
         { ALT: () => this.CONSUME(tokenMap.Plus) },
-        { ALT: () => this.CONSUME(tokenMap.Minus) }
+        { ALT: () => this.CONSUME(tokenMap.Minus) },
       ])
       this.SUBRULE(this.sumExpression)
     })
@@ -183,16 +183,16 @@ class GlossaParser extends Parser {
           // this.CONSUME(tokenMap.UnaryOp)
           this.CONSUME(tokenMap.Minus)
           this.SUBRULE(this.unaryExpression)
-        }
+        },
       },
-      { ALT: () => this.SUBRULE2(this.factor) }
+      { ALT: () => this.SUBRULE2(this.factor) },
     ])
   })
 
   private factor = this.RULE('factor', () => {
     this.OR([
       { ALT: () => this.SUBRULE(this.immutable) },
-      { ALT: () => this.SUBRULE(this.mutable) }
+      { ALT: () => this.SUBRULE(this.mutable) },
     ])
   })
 
@@ -212,18 +212,18 @@ class GlossaParser extends Parser {
           this.CONSUME(tokenMap.LParen)
           this.SUBRULE(this.expression)
           this.CONSUME(tokenMap.RParen)
-        }
+        },
       },
       {
         ALT: () => {
           this.CONSUME(tokenMap.Identifier)
           this.SUBRULE(this.args)
-        }
+        },
       },
       { ALT: () => this.CONSUME(tokenMap.IntegerVal) },
       { ALT: () => this.CONSUME(tokenMap.RealVal) },
       { ALT: () => this.CONSUME(tokenMap.StringVal) },
-      { ALT: () => this.CONSUME(tokenMap.BooleanVal) }
+      { ALT: () => this.CONSUME(tokenMap.BooleanVal) },
     ])
   })
 
@@ -237,7 +237,7 @@ class GlossaParser extends Parser {
     this.CONSUME(tokenMap.Write)
     this.AT_LEAST_ONE_SEP({
       SEP: tokenMap.Comma,
-      DEF: () => this.SUBRULE(this.expression)
+      DEF: () => this.SUBRULE(this.expression),
     })
   })
 
@@ -278,7 +278,7 @@ class GlossaParser extends Parser {
     this.CONSUME(tokenMap.Case)
     this.AT_LEAST_ONE_SEP({
       SEP: tokenMap.Comma,
-      DEF: () => this.SUBRULE(this.intOrRange)
+      DEF: () => this.SUBRULE(this.intOrRange),
     })
     this.AT_LEAST_ONE(() => this.SUBRULE(this.statement))
   })
@@ -321,7 +321,7 @@ class GlossaParser extends Parser {
       this.AT_LEAST_ONE(() => {
         this.OR([
           { ALT: () => this.SUBRULE(this.constDeclList) },
-          { ALT: () => this.SUBRULE(this.varDeclaration) }
+          { ALT: () => this.SUBRULE(this.varDeclaration) },
         ])
       })
     })
@@ -338,7 +338,7 @@ class GlossaParser extends Parser {
       this.AT_LEAST_ONE(() => {
         this.OR([
           { ALT: () => this.SUBRULE(this.constDeclList) },
-          { ALT: () => this.SUBRULE(this.varDeclaration) }
+          { ALT: () => this.SUBRULE(this.varDeclaration) },
         ])
       })
     })
@@ -349,7 +349,7 @@ class GlossaParser extends Parser {
     this.CONSUME(tokenMap.LParen)
     this.MANY_SEP({
       SEP: tokenMap.Comma,
-      DEF: () => this.CONSUME(tokenMap.Identifier)
+      DEF: () => this.CONSUME(tokenMap.Identifier),
     })
     this.CONSUME(tokenMap.RParen)
   })
@@ -370,7 +370,7 @@ class GlossaParser extends Parser {
     this.CONSUME(tokenMap.LParen)
     this.MANY_SEP({
       SEP: tokenMap.Comma,
-      DEF: () => this.SUBRULE(this.expression)
+      DEF: () => this.SUBRULE(this.expression),
     })
     this.CONSUME(tokenMap.RParen)
   })
@@ -387,9 +387,9 @@ class GlossaParser extends Parser {
       DEF: () => {
         this.OR([
           { ALT: () => this.CONSUME(tokenMap.StringVal) },
-          { ALT: () => this.CONSUME(tokenMap.Identifier) }
+          { ALT: () => this.CONSUME(tokenMap.Identifier) },
         ])
-      }
+      },
     })
   })
 
