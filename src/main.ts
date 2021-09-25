@@ -3,6 +3,7 @@ import GlossaParser from './parser'
 import { Lexer } from 'chevrotain'
 import { tokenMap, tokenList } from './tokens'
 import { debugTokenizer } from './tools/debug'
+import GlossaInterpreter from './interpreter/interpreter'
 
 const glossaLexer = new Lexer(tokenList)
 
@@ -16,7 +17,10 @@ readFile(process.argv[2], 'utf8', (err, text) => {
   // "input" is a setter which will reset the parser's state.
   parser.input = lexerResult.tokens
 
-  console.log(parser.script())
+  const gi = new GlossaInterpreter()
+  gi.script(parser.script())
+
+  // console.log(parser.script())
 
   if (parser.errors.length > 0) {
     parser.errors.forEach((err) => {
@@ -24,6 +28,7 @@ readFile(process.argv[2], 'utf8', (err, text) => {
       console.error(err.message)
       console.error(err.token)
     })
+
     throw new Error(parser.errors.toString())
   }
 })

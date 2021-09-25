@@ -1,8 +1,8 @@
 import { tokenMap, tokenList } from './tokens'
-import { Parser, Lexer, IToken } from 'chevrotain'
+import { CstParser, Lexer, IToken } from 'chevrotain'
 import { readFileSync } from 'fs'
 
-class GlossaParser extends Parser {
+class GlossaParser extends CstParser {
   constructor(inputTokens: Array<IToken> | null = null) {
     super(tokenList)
     this.performSelfAnalysis()

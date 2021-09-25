@@ -12,7 +12,7 @@ export const debugTokenizer = function (
   let currentOffset = 0
 
   for (let token of lexerResult.tokens) {
-    console.log(token)
+    // console.log(token)
 
     if (toHTML) {
       if (token.startOffset > currentOffset)

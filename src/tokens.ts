@@ -1,6 +1,6 @@
 import { createToken, TokenType, Lexer, ITokenConfig } from 'chevrotain'
 
-export const tokenMap: { [k: string]: TokenType } = {}
+export const tokenMap: Record<string, TokenType> = {}
 
 /**
  *
@@ -194,7 +194,7 @@ _addToken({
 
 _addToken({
   name: 'DoUntil',
-  pattern: /ΜΕΧΡΙΣ_ΟΤΟΥ /,
+  pattern: /ΜΕΧΡΙΣ_ΟΤΟΥ/,
   longer_alt: tokenMap.Identifier,
 })
 

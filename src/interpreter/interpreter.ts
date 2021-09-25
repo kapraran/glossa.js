@@ -39,7 +39,7 @@ class GlossaInterpreter extends BaseCstVisitor {
   }
 
   constDecl(ctx) {
-    console.log(ctx.Identifier[0].image)
+    // console.log(ctx.Identifier[0].image)
   }
 
   constVal(ctx) {}
