@@ -1,34 +1,43 @@
-import { readFile } from 'fs'
+import { promises as fs } from 'fs'
 import GlossaParser from './parser'
-import { Lexer } from 'chevrotain'
-import { tokenMap, tokenList } from './tokens'
 import { debugTokenizer } from './tools/debug'
 import GlossaInterpreter from './interpreter/interpreter'
+import { glossaLexer } from './lexer'
 
-const glossaLexer = new Lexer(tokenList)
+import { program } from 'commander'
 
-readFile(process.argv[2], 'utf8', (err, text) => {
-  if (err) throw err
+program
+  .version('0.0.1')
+  .argument('<file>', 'glossa file to run')
+  .action(async (file) => {
+    // read file contents
+    let contents
+    try {
+      contents = await fs.readFile(file, 'utf-8')
+    } catch (err) {
+      console.error(err)
+      process.exit(1)
+    }
 
-  const parser = new GlossaParser()
-  const lexerResult = glossaLexer.tokenize(text)
-  debugTokenizer(text, lexerResult, true)
+    const parser = new GlossaParser()
+    const lexerResult = glossaLexer.tokenize(contents)
+    debugTokenizer(contents, lexerResult, true)
 
-  // "input" is a setter which will reset the parser's state.
-  parser.input = lexerResult.tokens
+    // "input" is a setter which will reset the parser's state.
+    parser.input = lexerResult.tokens
 
-  const gi = new GlossaInterpreter()
-  gi.script(parser.script())
+    const interpreter = new GlossaInterpreter()
+    interpreter.script(parser.script())
 
-  // console.log(parser.script())
+    if (parser.errors.length > 0) {
+      parser.errors.forEach((err) => {
+        console.error('>> error')
+        console.error(err.message)
+        console.error(err.token)
+      })
 
-  if (parser.errors.length > 0) {
-    parser.errors.forEach((err) => {
-      console.error('>> error')
-      console.error(err.message)
-      console.error(err.token)
-    })
+      throw new Error(parser.errors.toString())
+    }
+  })
 
-    throw new Error(parser.errors.toString())
-  }
-})
+program.parse(process.argv)

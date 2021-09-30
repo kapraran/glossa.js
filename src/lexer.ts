@@ -1,5 +1,6 @@
 import { Lexer } from 'chevrotain'
+import { tokenList } from './tokens'
 
-export const GlossaLexer = new Lexer([], {
+export const glossaLexer = new Lexer(tokenList, {
   ensureOptimizations: true,
 })

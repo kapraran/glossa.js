@@ -19,5 +19,8 @@
     "prettier": "prettier --write \"src/**/*.{ts,js}\"",
     "diagram": "tsc && node dist/tools/gen-diagram",
     "test": "mocha --require ts-node/register test/**/*.test.ts"
+  },
+  "dependencies": {
+    "commander": "^8.2.0"
   }
 }

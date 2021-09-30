@@ -1,4 +1,3 @@
-
 export enum TokenName {
   Comment = 'Comment',
   WhiteSpace = 'WhiteSpace',
@@ -44,15 +43,15 @@ export enum TokenName {
   Colon = 'Colon',
   Comma = 'Comma',
   LSquare = 'LSquare',
-  RSquare = "RSquare",
-  LParen = "LParen",
-  RParen = "RParen",
-  Equal = "Equal",
-  AssignOp = "AssignOp",
-  DbDots = "DbDots",
-  RelOp = "RelOp",
-  Minus = "Minus",
-  MulOp = "MulOp",
-  Plus = "Plus",
-  Identifier = "Identifier"
+  RSquare = 'RSquare',
+  LParen = 'LParen',
+  RParen = 'RParen',
+  Equal = 'Equal',
+  AssignOp = 'AssignOp',
+  DbDots = 'DbDots',
+  RelOp = 'RelOp',
+  Minus = 'Minus',
+  MulOp = 'MulOp',
+  Plus = 'Plus',
+  Identifier = 'Identifier',
 }
