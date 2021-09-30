@@ -1,6 +1,7 @@
 import { tokenMap, tokenList } from './tokens'
-import { CstParser, Lexer, IToken } from 'chevrotain'
+import { CstParser, IToken } from 'chevrotain'
 import { readFileSync } from 'fs'
+import { glossaLexer } from './lexer'
 
 class GlossaParser extends CstParser {
   constructor(inputTokens: Array<IToken> | null = null) {
@@ -400,7 +401,6 @@ class GlossaParser extends CstParser {
    */
   static createFromString(inputStr: string): GlossaParser {
     // tokenize input
-    const glossaLexer = new Lexer(tokenList)
     const lexerResult = glossaLexer.tokenize(inputStr)
 
     return new GlossaParser(lexerResult.tokens)
