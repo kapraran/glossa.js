@@ -9,7 +9,11 @@ import { program } from 'commander'
 program
   .version('0.0.1')
   .argument('<file>', 'glossa file to run')
-  .action(async (file) => {
+  .option(
+    '-d, --debug',
+    'create a html file with the contents of the source file, tokenized visually'
+  )
+  .action(async (file, options) => {
     // read file contents
     let contents
     try {
@@ -21,7 +25,8 @@ program
 
     const parser = new GlossaParser()
     const lexerResult = glossaLexer.tokenize(contents)
-    debugTokenizer(contents, lexerResult, true)
+
+    if (options.debug) debugTokenizer(contents, lexerResult, true)
 
     // "input" is a setter which will reset the parser's state.
     parser.input = lexerResult.tokens
