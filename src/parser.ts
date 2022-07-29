@@ -1,14 +1,14 @@
-import { tokenMap, tokenList } from './tokens'
-import { CstParser, IToken } from 'chevrotain'
 import { readFileSync } from 'fs'
+import { CstParser, IToken } from 'chevrotain'
+import { tokenMap, tokenList } from './tokens'
 import { glossaLexer } from './lexer'
 
 class GlossaParser extends CstParser {
-  constructor(inputTokens: Array<IToken> | null = null) {
+  constructor(inputTokens: Array<IToken> | undefined = undefined) {
     super(tokenList)
     this.performSelfAnalysis()
 
-    if (inputTokens != null) this.input = inputTokens
+    if (inputTokens !== undefined) this.input = inputTokens
   }
 
   public script = this.RULE('script', () => {

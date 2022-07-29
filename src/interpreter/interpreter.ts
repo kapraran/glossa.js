@@ -1,12 +1,17 @@
 import GlossaParser from '../parser'
+import { deriveValAndTypeFromConstVal, mapDeclTypeToVarType } from './types'
 
 const parser = new GlossaParser()
 const BaseCstVisitor = parser.getBaseCstVisitorConstructor()
 
 class GlossaInterpreter extends BaseCstVisitor {
+  private symbols: any[]
+
   constructor() {
     super()
     this.validateVisitor()
+
+    this.symbols = []
   }
 
   script(ctx) {
@@ -20,26 +25,68 @@ class GlossaInterpreter extends BaseCstVisitor {
     if (ctx.constDeclList && ctx.constDeclList.length > 1)
       return console.error('Too many Const blocks')
 
+    if (ctx.constDeclList) this.visit(ctx.constDeclList)
+
     if (ctx.varDeclaration && ctx.varDeclaration.length > 1)
       return console.error('Too many Var blocks')
 
-    if (ctx.constDeclList) this.visit(ctx.constDeclList)
+    if (ctx.varDeclaration) this.visit(ctx.varDeclaration)
+
+    console.log(this.symbols)
   }
 
   programBody(ctx) {}
 
-  varDeclaration(ctx) {}
+  varDeclaration(ctx) {
+    // TODO check for duplicate blocks of same type
+    ctx.typedVarDeclList.forEach((ctx) => this.visit(ctx))
+  }
 
-  typedVarDeclList(ctx) {}
+  typedVarDeclList(ctx) {
+    const type = mapDeclTypeToVarType(ctx.DeclTypeSpecifier[0].image)
 
-  value(ctx) {}
+    const values = ctx.value
+      .map((ctx) => this.visit(ctx))
+      .map((value) => ({
+        ...value,
+        type,
+        isConstant: false,
+      }))
+
+    this.symbols.push(...values)
+  }
+
+  value(ctx) {
+    const name = ctx.Identifier[0].image
+    const isArray = ctx.LSquare !== undefined && ctx.LSquare.length > 0
+    const size = isArray ? parseInt(ctx.IntegerVal[0].image, 10) : 0
+
+    return {
+      name,
+      isArray,
+      size,
+      value: undefined,
+    }
+  }
 
   constDeclList(ctx) {
-    for (let i = 0; i < ctx.constDecl.length; i++) this.visit(ctx.constDecl[i])
+    const values = ctx.constDecl.map((ctx) => this.visit(ctx))
+
+    this.symbols.push(...values)
   }
 
   constDecl(ctx) {
-    // console.log(ctx.Identifier[0].image)
+    const [type, value] = deriveValAndTypeFromConstVal(ctx.constVal[0])
+    const name = ctx.Identifier[0].image
+
+    return {
+      type,
+      name,
+      isArray: false,
+      size: 0,
+      value,
+      isConstant: true,
+    }
   }
 
   constVal(ctx) {}

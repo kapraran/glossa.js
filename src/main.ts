@@ -23,26 +23,26 @@ program
       process.exit(1)
     }
 
-    const parser = new GlossaParser()
     const lexerResult = glossaLexer.tokenize(contents)
+    const parser = new GlossaParser(lexerResult.tokens)
 
     if (options.debug) debugTokenizer(contents, lexerResult, true)
 
-    // "input" is a setter which will reset the parser's state.
-    parser.input = lexerResult.tokens
+    // // "input" is a setter which will reset the parser's state.
+    // parser.input = lexerResult.tokens
 
-    const interpreter = new GlossaInterpreter()
-    interpreter.script(parser.script())
+    const cst = parser.script()
 
     if (parser.errors.length > 0) {
-      parser.errors.forEach((err) => {
-        console.error('>> error')
-        console.error(err.message)
-        console.error(err.token)
-      })
+      parser.errors.forEach((err) =>
+        console.error(`ERROR: ${err.message}\n${JSON.stringify(err.token)}`)
+      )
 
       throw new Error(parser.errors.toString())
     }
+
+    const interpreter = new GlossaInterpreter()
+    interpreter.visit(cst)
   })
 
 program.parse(process.argv)
