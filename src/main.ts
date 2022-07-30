@@ -1,10 +1,12 @@
-import { promises as fs } from 'fs'
+import { promises as fs, writeFileSync } from 'fs'
 import GlossaParser from './parser'
 import { debugTokenizer } from './tools/debug'
 import GlossaInterpreter from './interpreter/interpreter'
 import { glossaLexer } from './lexer'
 
 import { program } from 'commander'
+import { generateCstDts, Rule } from 'chevrotain'
+import { resolve } from 'path'
 
 program
   .version('0.0.1')
@@ -40,6 +42,11 @@ program
 
       throw new Error(parser.errors.toString())
     }
+
+    // const productions: Record<string, Rule> = parser.getGAstProductions()
+    // const dtsString = generateCstDts(productions)
+    // const dtsPath = resolve(__dirname, '..', 'json_cst.d.ts')
+    // writeFileSync(dtsPath, dtsString)
 
     const interpreter = new GlossaInterpreter()
     interpreter.visit(cst)

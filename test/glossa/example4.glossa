@@ -12,8 +12,8 @@
         ΑΚΕΡΑΙΕΣ: price, position, p[5], i
         ΛΟΓΙΚΕΣ: found
 ΑΡΧΗ
-    price <-- 100 / 2 + 10
-    position <-- -2
+    nikos <-- "Nick"
+    num <-- 7 DIV 20
 
     ! Εντολές εισόδου / εξόδου
     ΔΙΑΒΑΣΕ price

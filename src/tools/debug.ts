@@ -30,7 +30,7 @@ export const debugTokenizer = function (
 
   if (toHTML) {
     const htmlTemplate = readFileSync(
-      resolve(__dirname, '../../assets/tokenizer-template.html'),
+      resolve(__dirname, '../../../assets/tokenizer-template.html'),
       'utf8'
     )
     const editedHtml = htmlTemplate

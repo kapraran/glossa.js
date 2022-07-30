@@ -1,3 +1,39 @@
+import {
+  AndExpressionCstChildren,
+  AndExpressionCstNode,
+  AssignStmtCstChildren,
+  AssignStmtCstNode,
+  ConstDeclCstChildren,
+  ExpressionCstChildren,
+  ExpressionCstNode,
+  FactorCstChildren,
+  FactorCstNode,
+  ImmutableCstChildren,
+  ImmutableCstNode,
+  MutableCstChildren,
+  MutableCstNode,
+  ProgramBodyCstChildren,
+  ProgramBodyCstNode,
+  ProgramCstChildren,
+  ProgramCstNode,
+  RelExpressionCstChildren,
+  RelExpressionCstNode,
+  ScriptCstChildren,
+  ScriptCstNode,
+  StatementCstChildren,
+  StatementCstNode,
+  SumExpressionCstChildren,
+  SumExpressionCstNode,
+  TermCstChildren,
+  TermCstNode,
+  TypedVarDeclListCstChildren,
+  UnaryExpressionCstChildren,
+  UnaryExpressionCstNode,
+  UnaryRelExpressionCstChildren,
+  UnaryRelExpressionCstNode,
+  ValueCstChildren,
+  VarDeclarationCstChildren,
+} from '../../d'
 import GlossaParser from '../parser'
 import { deriveValAndTypeFromConstVal, mapDeclTypeToVarType } from './types'
 
@@ -14,11 +50,11 @@ class GlossaInterpreter extends BaseCstVisitor {
     this.symbols = []
   }
 
-  script(ctx) {
+  script(ctx: ScriptCstChildren) {
     this.visit(ctx.program)
   }
 
-  program(ctx) {
+  program(ctx: ProgramCstChildren) {
     const programName: string = ctx.Identifier[0].image
     console.log(`Program name is "${programName}"`)
 
@@ -32,17 +68,21 @@ class GlossaInterpreter extends BaseCstVisitor {
 
     if (ctx.varDeclaration) this.visit(ctx.varDeclaration)
 
-    console.log(this.symbols)
+    if (ctx.programBody) this.visit(ctx.programBody)
+
+    // console.log(this.symbols)
   }
 
-  programBody(ctx) {}
+  programBody(ctx: ProgramBodyCstChildren) {
+    ctx.statement.forEach((ctx: StatementCstNode) => this.visit(ctx))
+  }
 
-  varDeclaration(ctx) {
+  varDeclaration(ctx: VarDeclarationCstChildren) {
     // TODO check for duplicate blocks of same type
     ctx.typedVarDeclList.forEach((ctx) => this.visit(ctx))
   }
 
-  typedVarDeclList(ctx) {
+  typedVarDeclList(ctx: TypedVarDeclListCstChildren) {
     const type = mapDeclTypeToVarType(ctx.DeclTypeSpecifier[0].image)
 
     const values = ctx.value
@@ -56,10 +96,10 @@ class GlossaInterpreter extends BaseCstVisitor {
     this.symbols.push(...values)
   }
 
-  value(ctx) {
+  value(ctx: ValueCstChildren) {
     const name = ctx.Identifier[0].image
     const isArray = ctx.LSquare !== undefined && ctx.LSquare.length > 0
-    const size = isArray ? parseInt(ctx.IntegerVal[0].image, 10) : 0
+    const size = isArray ? parseInt(ctx.IntegerVal![0].image, 10) : 0
 
     return {
       name,
@@ -75,7 +115,7 @@ class GlossaInterpreter extends BaseCstVisitor {
     this.symbols.push(...values)
   }
 
-  constDecl(ctx) {
+  constDecl(ctx: ConstDeclCstChildren) {
     const [type, value] = deriveValAndTypeFromConstVal(ctx.constVal[0])
     const name = ctx.Identifier[0].image
 
@@ -91,33 +131,91 @@ class GlossaInterpreter extends BaseCstVisitor {
 
   constVal(ctx) {}
 
-  statement(ctx) {}
+  statement(ctx: StatementCstChildren) {
+    if (ctx.assignStmt) this.visit(ctx.assignStmt)
+  }
 
   readStmt(ctx) {}
 
-  expression(ctx) {}
+  expression(ctx: ExpressionCstChildren) {
+    return this.visit(ctx.andExpression)
+  }
 
-  andExpression(ctx) {}
+  andExpression(ctx: AndExpressionCstChildren) {
+    return this.visit(ctx.unaryRelExpression)
+  }
 
-  unaryRelExpression(ctx) {}
+  unaryRelExpression(ctx: UnaryRelExpressionCstChildren) {
+    if (ctx.Not) {
+      // TODO
+    }
 
-  relExpression(ctx) {}
+    return this.visit(ctx.relExpression!)
+  }
 
-  sumExpression(ctx) {}
+  relExpression(ctx: RelExpressionCstChildren) {
+    const sumExpVal = this.visit(ctx.sumExpression[0])
+
+    return sumExpVal
+  }
+
+  sumExpression(ctx: SumExpressionCstChildren) {
+    const termValue = this.visit(ctx.term)
+
+    if (ctx.Plus) return termValue + this.visit(ctx.sumExpression!)
+    if (ctx.Minus) return termValue - this.visit(ctx.sumExpression!)
+
+    return termValue
+  }
 
   intOrRange(ctx) {}
 
-  term(ctx) {}
+  term(ctx: TermCstChildren) {
+    const unaryExpressionVal = this.visit(ctx.unaryExpression)
+    if (ctx.MulOp) {
+      const termValue = this.visit(ctx.term!)
 
-  unaryExpression(ctx) {}
+      if (ctx.MulOp[0].image === '*') return unaryExpressionVal * termValue
+      if (ctx.MulOp[0].image === '/') return unaryExpressionVal / termValue
+    }
 
-  factor(ctx) {}
+    return unaryExpressionVal
+  }
 
-  mutable(ctx) {}
+  unaryExpression(ctx: UnaryExpressionCstChildren) {
+    if (ctx.factor) return this.visit(ctx.factor)
 
-  immutable(ctx) {}
+    return -this.visit(ctx.unaryExpression!)
+  }
 
-  assignStmt(ctx) {}
+  factor(ctx: FactorCstChildren) {
+    return this.visit(ctx.immutable ?? ctx.mutable!)
+  }
+
+  mutable(ctx: MutableCstChildren) {}
+
+  immutable(ctx: ImmutableCstChildren) {
+    if (ctx.LParen && ctx.RParen) {
+      return this.visit(ctx.expression!)
+    }
+
+    if (ctx.IntegerVal) return parseInt(ctx.IntegerVal[0].image, 10)
+    if (ctx.RealVal) return parseFloat(ctx.RealVal[0].image)
+
+    // TODO
+  }
+
+  assignStmt(ctx: AssignStmtCstChildren) {
+    const symbolName = ctx.mutable[0].children.Identifier[0].image
+    const symbol = this.symbols.find((symbol) => symbol.name === symbolName)
+    console.log(symbolName)
+    console.log(symbol)
+
+    const value = this.visit(ctx.expression)
+
+    console.log(`The value of ${symbolName} is ${value}`)
+    symbol.value = value
+  }
 
   writeStmt(ctx) {}
 

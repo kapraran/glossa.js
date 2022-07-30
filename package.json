@@ -15,9 +15,9 @@
   },
   "scripts": {
     "tsc": "tsc",
-    "example": "tsc && node dist/main test/glossa/sample.glossa -d",
+    "example": "tsc && node dist/src/main test/glossa/sample.glossa -d",
     "prettier": "prettier --write \"src/**/*.{ts,js}\"",
-    "diagram": "tsc && node dist/tools/gen-diagram",
+    "diagram": "tsc && node dist/src/tools/gen-diagram",
     "test": "mocha --require ts-node/register test/**/*.test.ts"
   },
   "dependencies": {
