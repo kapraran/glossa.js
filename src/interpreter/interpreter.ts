@@ -22,6 +22,7 @@ import {
   UnaryRelExpressionCstChildren,
   ValueCstChildren,
   VarDeclarationCstChildren,
+  WhileStmtCstChildren,
   WriteStmtCstChildren,
 } from '../../d'
 import GlossaParser from '../parser'
@@ -146,9 +147,10 @@ class GlossaInterpreter extends BaseCstVisitor {
 
   async statement(ctx: StatementCstChildren) {
     if (ctx.readStmt) await this.visit(ctx.readStmt)
-    if (ctx.writeStmt) this.visit(ctx.writeStmt)
+    if (ctx.writeStmt) await this.visit(ctx.writeStmt)
     if (ctx.assignStmt) this.visit(ctx.assignStmt)
     if (ctx.forStmt) this.visit(ctx.forStmt)
+    if (ctx.whileStmt) this.visit(ctx.whileStmt)
   }
 
   async readStmt(ctx: ReadStmtCstChildren) {
@@ -196,6 +198,17 @@ class GlossaInterpreter extends BaseCstVisitor {
 
   relExpression(ctx: RelExpressionCstChildren) {
     const sumExpVal = this.visit(ctx.sumExpression[0])
+
+    if (ctx.RelOp) {
+      const op = ctx.RelOp[0].image
+      const rightVal = this.visit(ctx.sumExpression[1])
+
+      if (op === '<') return sumExpVal < rightVal
+      if (op === '>') return sumExpVal > rightVal
+      if (op === '<=') return sumExpVal <= rightVal
+      if (op === '>=') return sumExpVal >= rightVal
+      if (op === '<>') return sumExpVal !== rightVal
+    }
 
     return sumExpVal
   }
@@ -287,7 +300,7 @@ class GlossaInterpreter extends BaseCstVisitor {
     console.log(`The value of ${symbol.name} is ${symbol.value}`)
   }
 
-  writeStmt(ctx: WriteStmtCstChildren) {
+  async writeStmt(ctx: WriteStmtCstChildren) {
     console.log(ctx.expression.map((ctx) => this.visit(ctx)).join(''))
   }
 
@@ -329,7 +342,11 @@ class GlossaInterpreter extends BaseCstVisitor {
     this.symbols = this.symbols.filter((curSymbol) => curSymbol !== symbol)
   }
 
-  whileStmt(ctx) {}
+  whileStmt(ctx: WhileStmtCstChildren) {
+    while (this.visit(ctx.expression)) {
+      ctx.statement.forEach((ctx) => this.visit(ctx))
+    }
+  }
 
   doUntilStmt(ctx) {}
 
