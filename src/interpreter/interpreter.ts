@@ -2,8 +2,11 @@ import {
   AndExpressionCstChildren,
   AssignStmtCstChildren,
   ConstDeclCstChildren,
+  ConstDeclListCstChildren,
   ExpressionCstChildren,
   FactorCstChildren,
+  ForStmtCstChildren,
+  IfStmtCstChildren,
   ImmutableCstChildren,
   MutableCstChildren,
   ProgramBodyCstChildren,
@@ -30,6 +33,7 @@ import {
   parseBoolean,
   parseString,
   SymbolData,
+  VarType,
 } from './types'
 import * as readline from 'readline'
 
@@ -43,7 +47,7 @@ const parser = new GlossaParser()
 const BaseCstVisitor = parser.getBaseCstVisitorConstructor()
 
 class GlossaInterpreter extends BaseCstVisitor {
-  private symbols: any[]
+  private symbols: SymbolData[]
 
   constructor() {
     super()
@@ -94,18 +98,18 @@ class GlossaInterpreter extends BaseCstVisitor {
   typedVarDeclList(ctx: TypedVarDeclListCstChildren) {
     const type = mapDeclTypeToVarType(ctx.DeclTypeSpecifier[0].image)
 
-    const values = ctx.value
+    const symbols = ctx.value
       .map((ctx) => this.visit(ctx))
       .map((value) => ({
         ...value,
         type,
         isConstant: false,
-      }))
+      })) as SymbolData[]
 
-    this.symbols.push(...values)
+    this.symbols.push(...symbols)
   }
 
-  value(ctx: ValueCstChildren) {
+  value(ctx: ValueCstChildren): Partial<SymbolData> {
     const name = ctx.Identifier[0].image
     const isArray = ctx.LSquare !== undefined && ctx.LSquare.length > 0
     const size = isArray ? parseInt(ctx.IntegerVal![0].image, 10) : 0
@@ -118,10 +122,10 @@ class GlossaInterpreter extends BaseCstVisitor {
     }
   }
 
-  constDeclList(ctx) {
-    const values = ctx.constDecl.map((ctx) => this.visit(ctx))
+  constDeclList(ctx: ConstDeclListCstChildren) {
+    const symbols = ctx.constDecl.map((ctx) => this.visit(ctx)) as SymbolData[]
 
-    this.symbols.push(...values)
+    this.symbols.push(...symbols)
   }
 
   constDecl(ctx: ConstDeclCstChildren) {
@@ -141,9 +145,10 @@ class GlossaInterpreter extends BaseCstVisitor {
   constVal(ctx) {}
 
   async statement(ctx: StatementCstChildren) {
-    if (ctx.assignStmt) this.visit(ctx.assignStmt)
     if (ctx.readStmt) await this.visit(ctx.readStmt)
     if (ctx.writeStmt) this.visit(ctx.writeStmt)
+    if (ctx.assignStmt) this.visit(ctx.assignStmt)
+    if (ctx.forStmt) this.visit(ctx.forStmt)
   }
 
   async readStmt(ctx: ReadStmtCstChildren) {
@@ -286,7 +291,11 @@ class GlossaInterpreter extends BaseCstVisitor {
     console.log(ctx.expression.map((ctx) => this.visit(ctx)).join(''))
   }
 
-  ifStmt(ctx) {}
+  ifStmt(ctx: IfStmtCstChildren) {
+    const val = this.visit(ctx.expression)
+
+    // NEED TO MOVE ELSE TO ANOTHER RULE
+  }
 
   elseIfStmt(ctx) {}
 
@@ -294,7 +303,31 @@ class GlossaInterpreter extends BaseCstVisitor {
 
   caseStmt(ctx) {}
 
-  forStmt(ctx) {}
+  forStmt(ctx: ForStmtCstChildren) {
+    const from = this.visit(ctx.expression[0])
+    const to = this.visit(ctx.expression[1])
+    const step = ctx.Step ? this.visit(ctx.expression[2]) : 1
+
+    const symbol = {
+      type: VarType.INTEGER,
+      name: ctx.Identifier[0].image,
+      isArray: false,
+      size: 0,
+      isConstant: false,
+      value: from,
+    }
+
+    // add symbol
+    this.symbols.push(symbol)
+
+    for (let i = from; i < to; i += step) {
+      symbol.value = i
+      ctx.statement.forEach((ctx) => this.visit(ctx))
+    }
+
+    // remove symbol
+    this.symbols = this.symbols.filter((curSymbol) => curSymbol !== symbol)
+  }
 
   whileStmt(ctx) {}
 
