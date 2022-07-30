@@ -1,41 +1,36 @@
 import {
   AndExpressionCstChildren,
-  AndExpressionCstNode,
   AssignStmtCstChildren,
-  AssignStmtCstNode,
   ConstDeclCstChildren,
   ExpressionCstChildren,
-  ExpressionCstNode,
   FactorCstChildren,
-  FactorCstNode,
   ImmutableCstChildren,
-  ImmutableCstNode,
   MutableCstChildren,
-  MutableCstNode,
   ProgramBodyCstChildren,
-  ProgramBodyCstNode,
   ProgramCstChildren,
-  ProgramCstNode,
+  ReadStmtCstChildren,
   RelExpressionCstChildren,
-  RelExpressionCstNode,
   ScriptCstChildren,
-  ScriptCstNode,
   StatementCstChildren,
   StatementCstNode,
   SumExpressionCstChildren,
-  SumExpressionCstNode,
   TermCstChildren,
-  TermCstNode,
   TypedVarDeclListCstChildren,
   UnaryExpressionCstChildren,
-  UnaryExpressionCstNode,
   UnaryRelExpressionCstChildren,
-  UnaryRelExpressionCstNode,
   ValueCstChildren,
   VarDeclarationCstChildren,
+  WriteStmtCstChildren,
 } from '../../d'
 import GlossaParser from '../parser'
 import { deriveValAndTypeFromConstVal, mapDeclTypeToVarType } from './types'
+import * as readline from 'readline'
+
+const rl = readline.createInterface({
+  input: process.stdin, //or fileStream
+  output: process.stdout,
+})
+const it = rl[Symbol.asyncIterator]()
 
 const parser = new GlossaParser()
 const BaseCstVisitor = parser.getBaseCstVisitorConstructor()
@@ -50,31 +45,38 @@ class GlossaInterpreter extends BaseCstVisitor {
     this.symbols = []
   }
 
-  script(ctx: ScriptCstChildren) {
-    this.visit(ctx.program)
+  async script(ctx: ScriptCstChildren) {
+    try {
+      await this.visit(ctx.program)
+    } catch (error) {
+      console.error(error)
+      rl.close()
+    }
   }
 
-  program(ctx: ProgramCstChildren) {
+  async program(ctx: ProgramCstChildren) {
     const programName: string = ctx.Identifier[0].image
     console.log(`Program name is "${programName}"`)
 
     if (ctx.constDeclList && ctx.constDeclList.length > 1)
       return console.error('Too many Const blocks')
 
-    if (ctx.constDeclList) this.visit(ctx.constDeclList)
-
     if (ctx.varDeclaration && ctx.varDeclaration.length > 1)
       return console.error('Too many Var blocks')
 
+    if (ctx.constDeclList) this.visit(ctx.constDeclList)
+
     if (ctx.varDeclaration) this.visit(ctx.varDeclaration)
 
-    if (ctx.programBody) this.visit(ctx.programBody)
+    if (ctx.programBody) await this.visit(ctx.programBody)
 
     // console.log(this.symbols)
   }
 
-  programBody(ctx: ProgramBodyCstChildren) {
-    ctx.statement.forEach((ctx: StatementCstNode) => this.visit(ctx))
+  async programBody(ctx: ProgramBodyCstChildren) {
+    for (const statementCtx of ctx.statement) {
+      await this.visit(statementCtx)
+    }
   }
 
   varDeclaration(ctx: VarDeclarationCstChildren) {
@@ -131,11 +133,22 @@ class GlossaInterpreter extends BaseCstVisitor {
 
   constVal(ctx) {}
 
-  statement(ctx: StatementCstChildren) {
+  async statement(ctx: StatementCstChildren) {
     if (ctx.assignStmt) this.visit(ctx.assignStmt)
+    if (ctx.readStmt) await this.visit(ctx.readStmt)
+    if (ctx.writeStmt) this.visit(ctx.writeStmt)
   }
 
-  readStmt(ctx) {}
+  async readStmt(ctx: ReadStmtCstChildren) {
+    const mutables = ctx.mutable.map((ctx) => this.visit(ctx))
+
+    for (const [symbol, index] of mutables) {
+      const readVal = await it.next()
+
+      console.log('read value of ', readVal)
+      symbol.value = readVal.value
+    }
+  }
 
   expression(ctx: ExpressionCstChildren) {
     return this.visit(ctx.andExpression)
@@ -189,10 +202,22 @@ class GlossaInterpreter extends BaseCstVisitor {
   }
 
   factor(ctx: FactorCstChildren) {
-    return this.visit(ctx.immutable ?? ctx.mutable!)
+    if (ctx.immutable) return this.visit(ctx.immutable)
+
+    const [symbol, index] = this.visit(ctx.mutable!)
+
+    return index >= 0 ? symbol.value[index] : symbol.value
   }
 
-  mutable(ctx: MutableCstChildren) {}
+  mutable(ctx: MutableCstChildren) {
+    const symbol = this.symbols.find(
+      (symbol) => ctx.Identifier[0].image === symbol.name
+    )
+
+    if (ctx.LSquare && !symbol.isArray) throw new Error('Its not an array')
+
+    return [symbol, ctx.expression ? this.visit(ctx.expression!) : -1]
+  }
 
   immutable(ctx: ImmutableCstChildren) {
     if (ctx.LParen && ctx.RParen) {
@@ -201,6 +226,11 @@ class GlossaInterpreter extends BaseCstVisitor {
 
     if (ctx.IntegerVal) return parseInt(ctx.IntegerVal[0].image, 10)
     if (ctx.RealVal) return parseFloat(ctx.RealVal[0].image)
+    if (ctx.StringVal)
+      return ctx.StringVal[0].image.substring(
+        1,
+        ctx.StringVal[0].image.length - 1
+      )
 
     // TODO
   }
@@ -217,7 +247,9 @@ class GlossaInterpreter extends BaseCstVisitor {
     symbol.value = value
   }
 
-  writeStmt(ctx) {}
+  writeStmt(ctx: WriteStmtCstChildren) {
+    console.log(ctx.expression.map((ctx) => this.visit(ctx)).join(''))
+  }
 
   ifStmt(ctx) {}
 
