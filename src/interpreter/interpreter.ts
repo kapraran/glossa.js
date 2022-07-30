@@ -12,7 +12,6 @@ import {
   RelExpressionCstChildren,
   ScriptCstChildren,
   StatementCstChildren,
-  StatementCstNode,
   SumExpressionCstChildren,
   TermCstChildren,
   TypedVarDeclListCstChildren,
@@ -23,7 +22,15 @@ import {
   WriteStmtCstChildren,
 } from '../../d'
 import GlossaParser from '../parser'
-import { deriveValAndTypeFromConstVal, mapDeclTypeToVarType } from './types'
+import {
+  deriveValAndTypeFromConstVal,
+  isBoolean,
+  isNumber,
+  mapDeclTypeToVarType,
+  parseBoolean,
+  parseString,
+  SymbolData,
+} from './types'
 import * as readline from 'readline'
 
 const rl = readline.createInterface({
@@ -107,7 +114,7 @@ class GlossaInterpreter extends BaseCstVisitor {
       name,
       isArray,
       size,
-      value: undefined,
+      value: isArray ? new Array(size).fill(undefined) : undefined,
     }
   }
 
@@ -151,19 +158,35 @@ class GlossaInterpreter extends BaseCstVisitor {
   }
 
   expression(ctx: ExpressionCstChildren) {
-    return this.visit(ctx.andExpression)
+    const val = this.visit(ctx.andExpression)
+    if (!ctx.Or) return val
+
+    const exprVal = this.visit(ctx.expression!)
+
+    if (!isBoolean(val) || !isBoolean(exprVal))
+      throw new Error('Not boolean in Or expr')
+
+    return val || exprVal
   }
 
   andExpression(ctx: AndExpressionCstChildren) {
-    return this.visit(ctx.unaryRelExpression)
+    const val = this.visit(ctx.unaryRelExpression)
+    if (!ctx.And) return val
+
+    const andExprVal = this.visit(ctx.andExpression!)
+
+    if (!isBoolean(val) || !isBoolean(andExprVal))
+      throw new Error('Not boolean in And expr')
+
+    return val && andExprVal
   }
 
   unaryRelExpression(ctx: UnaryRelExpressionCstChildren) {
-    if (ctx.Not) {
-      // TODO
-    }
+    const val = this.visit(ctx.relExpression!)
 
-    return this.visit(ctx.relExpression!)
+    if (ctx.Not && !isBoolean(val)) throw new Error('Not boolean in Not expr')
+
+    return ctx.Not ? !val : val
   }
 
   relExpression(ctx: RelExpressionCstChildren) {
@@ -175,8 +198,14 @@ class GlossaInterpreter extends BaseCstVisitor {
   sumExpression(ctx: SumExpressionCstChildren) {
     const termValue = this.visit(ctx.term)
 
-    if (ctx.Plus) return termValue + this.visit(ctx.sumExpression!)
-    if (ctx.Minus) return termValue - this.visit(ctx.sumExpression!)
+    if (ctx.Plus || ctx.Minus) {
+      const sumExpressionValue = this.visit(ctx.sumExpression!)
+
+      if (!isNumber(termValue) || !isNumber(sumExpressionValue))
+        throw new Error('Not a number')
+
+      return termValue + (ctx.Minus ? -sumExpressionValue : sumExpressionValue)
+    }
 
     return termValue
   }
@@ -206,13 +235,16 @@ class GlossaInterpreter extends BaseCstVisitor {
 
     const [symbol, index] = this.visit(ctx.mutable!)
 
-    return index >= 0 ? symbol.value[index] : symbol.value
+    return index > -1 ? symbol.value[index] : symbol.value
   }
 
   mutable(ctx: MutableCstChildren) {
     const symbol = this.symbols.find(
       (symbol) => ctx.Identifier[0].image === symbol.name
     )
+
+    if (symbol === undefined)
+      throw new Error(`Symbol not found ${ctx.Identifier[0].image}`)
 
     if (ctx.LSquare && !symbol.isArray) throw new Error('Its not an array')
 
@@ -226,25 +258,28 @@ class GlossaInterpreter extends BaseCstVisitor {
 
     if (ctx.IntegerVal) return parseInt(ctx.IntegerVal[0].image, 10)
     if (ctx.RealVal) return parseFloat(ctx.RealVal[0].image)
-    if (ctx.StringVal)
-      return ctx.StringVal[0].image.substring(
-        1,
-        ctx.StringVal[0].image.length - 1
-      )
+    if (ctx.BooleanVal) return parseBoolean(ctx.BooleanVal[0].image)
+    if (ctx.StringVal) return parseString(ctx.StringVal[0].image)
 
-    // TODO
+    // TODO .Identifier / args
   }
 
   assignStmt(ctx: AssignStmtCstChildren) {
-    const symbolName = ctx.mutable[0].children.Identifier[0].image
-    const symbol = this.symbols.find((symbol) => symbol.name === symbolName)
-    console.log(symbolName)
-    console.log(symbol)
+    const [symbol, index] = this.visit(ctx.mutable) as [SymbolData, number]
 
-    const value = this.visit(ctx.expression)
+    let value = this.visit(ctx.expression)
 
-    console.log(`The value of ${symbolName} is ${value}`)
-    symbol.value = value
+    if (symbol.isArray && !Array.isArray(value))
+      throw new Error('ITS NOT ARRAY 1')
+    if (!symbol.isArray && Array.isArray(value))
+      throw new Error('ITS NOT ARRAY 2')
+    if (symbol.isArray && symbol.size !== value?.length)
+      throw new Error('NOT SAME SIZE ARRAY')
+
+    index > -1
+      ? (symbol.value[index] = value)
+      : (symbol.value = symbol.isArray ? value.slice(0) : value)
+    console.log(`The value of ${symbol.name} is ${symbol.value}`)
   }
 
   writeStmt(ctx: WriteStmtCstChildren) {

@@ -37,3 +37,39 @@ export function deriveValAndTypeFromConstVal(ctx): [VarType, any] {
 
   return [VarType.STRING, '']
 }
+
+export type SymbolData = {
+  type: VarType
+  name: string
+  value: any
+  isArray: boolean
+  size: number
+  isConstant: boolean
+}
+
+export function isNumber(n: any): boolean {
+  return isInteger(n) || isFloat(n)
+}
+export function isInteger(n: any): boolean {
+  return typeof n === 'number' && Number.isInteger(n)
+}
+
+export function isFloat(n: any): boolean {
+  return typeof n === 'number' && !Number.isInteger(n)
+}
+
+export function isString(n: any): boolean {
+  return typeof n === 'string'
+}
+
+export function isBoolean(n: any): boolean {
+  return typeof n === 'boolean'
+}
+
+export function parseString(stringLike: string): string {
+  return stringLike.substring(1, stringLike.length - 1)
+}
+
+export function parseBoolean(boolLike: string): boolean {
+  return boolLike === 'ΑΛΗΘΗΣ'
+}
