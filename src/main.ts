@@ -45,7 +45,7 @@ program
 
     // const productions: Record<string, Rule> = parser.getGAstProductions()
     // const dtsString = generateCstDts(productions)
-    // const dtsPath = resolve(__dirname, '..', 'json_cst.d.ts')
+    // const dtsPath = resolve(__dirname, '..', '..', 'd.ts')
     // writeFileSync(dtsPath, dtsString)
 
     const interpreter = new GlossaInterpreter()

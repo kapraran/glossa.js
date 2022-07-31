@@ -1,20 +1,27 @@
 import {
   AndExpressionCstChildren,
+  ArgsCstChildren,
   AssignStmtCstChildren,
   ConstDeclCstChildren,
   ConstDeclListCstChildren,
+  DoUntilStmtCstChildren,
+  ElseIfStmtCstChildren,
+  ElseStmtCstChildren,
   ExpressionCstChildren,
   FactorCstChildren,
   ForStmtCstChildren,
+  FuncBodyCstChildren,
   IfStmtCstChildren,
   ImmutableCstChildren,
   MutableCstChildren,
+  ProcedureBodyCstChildren,
   ProgramBodyCstChildren,
   ProgramCstChildren,
   ReadStmtCstChildren,
   RelExpressionCstChildren,
   ScriptCstChildren,
   StatementCstChildren,
+  StringConcatCstChildren,
   SumExpressionCstChildren,
   TermCstChildren,
   TypedVarDeclListCstChildren,
@@ -150,7 +157,8 @@ class GlossaInterpreter extends BaseCstVisitor {
     if (ctx.writeStmt) await this.visit(ctx.writeStmt)
     if (ctx.assignStmt) this.visit(ctx.assignStmt)
     if (ctx.forStmt) this.visit(ctx.forStmt)
-    if (ctx.whileStmt) this.visit(ctx.whileStmt)
+    if (ctx.whileStmt) await this.visit(ctx.whileStmt)
+    if (ctx.doUntilStmt) await this.visit(ctx.doUntilStmt)
   }
 
   async readStmt(ctx: ReadStmtCstChildren) {
@@ -257,12 +265,10 @@ class GlossaInterpreter extends BaseCstVisitor {
   }
 
   mutable(ctx: MutableCstChildren) {
-    const symbol = this.symbols.find(
-      (symbol) => ctx.Identifier[0].image === symbol.name
-    )
+    const symbolName = ctx.Identifier[0].image
+    const symbol = this.symbols.find((symbol) => symbolName === symbol.name)
 
-    if (symbol === undefined)
-      throw new Error(`Symbol not found ${ctx.Identifier[0].image}`)
+    if (symbol === undefined) throw new Error(`Symbol not found ${symbolName}`)
 
     if (ctx.LSquare && !symbol.isArray) throw new Error('Its not an array')
 
@@ -305,12 +311,34 @@ class GlossaInterpreter extends BaseCstVisitor {
   }
 
   ifStmt(ctx: IfStmtCstChildren) {
-    const val = this.visit(ctx.expression)
+    if (this.visit(ctx.expression)) {
+      ctx.statement.forEach((ctx) => this.visit(ctx))
+      return
+    }
+
+    if (ctx.elseIfStmt) {
+      for (const elseIfCtx of ctx.elseIfStmt) {
+        if (this.visit(elseIfCtx)) return
+      }
+    }
+
+    if (ctx.elseStmt) this.visit(ctx.elseStmt)
 
     // NEED TO MOVE ELSE TO ANOTHER RULE
   }
 
-  elseIfStmt(ctx) {}
+  elseStmt(ctx: ElseStmtCstChildren) {
+    return ctx.statement.map((ctx) => this.visit(ctx))
+  }
+
+  elseIfStmt(ctx: ElseIfStmtCstChildren) {
+    if (this.visit(ctx.expression)) {
+      ctx.statement.forEach((ctx) => this.visit(ctx))
+      return true
+    }
+
+    return false
+  }
 
   selectStmt(ctx) {}
 
@@ -342,13 +370,21 @@ class GlossaInterpreter extends BaseCstVisitor {
     this.symbols = this.symbols.filter((curSymbol) => curSymbol !== symbol)
   }
 
-  whileStmt(ctx: WhileStmtCstChildren) {
+  async whileStmt(ctx: WhileStmtCstChildren) {
     while (this.visit(ctx.expression)) {
-      ctx.statement.forEach((ctx) => this.visit(ctx))
+      // ctx.statement.forEach((ctx) => this.visit(ctx))
+      await this._forEach(ctx.statement)
     }
   }
 
-  doUntilStmt(ctx) {}
+  async doUntilStmt(ctx: DoUntilStmtCstChildren) {
+    let exprVal = true
+    while (exprVal) {
+      // ctx.statement.forEach((ctx) => this.visit(ctx))
+      await this._forEach(ctx.statement)
+      exprVal = this.visit(ctx.expression)
+    }
+  }
 
   procedure(ctx) {}
 
@@ -356,15 +392,29 @@ class GlossaInterpreter extends BaseCstVisitor {
 
   parameters(ctx) {}
 
-  procedureBody(ctx) {}
+  async procedureBody(ctx: ProcedureBodyCstChildren) {
+    return await this._forEach(ctx.statement)
+  }
 
   procedureCallStmt(ctx) {}
 
-  args(ctx) {}
+  args(ctx: ArgsCstChildren) {
+    return (ctx.expression || []).map((ctx) => this.visit(ctx))
+  }
 
-  funcBody(ctx) {}
+  async funcBody(ctx: FuncBodyCstChildren) {
+    return await this._forEach(ctx.statement)
+  }
 
-  stringConcat(ctx) {}
+  stringConcat(ctx: StringConcatCstChildren) {
+    // TODO maybe not needed
+  }
+
+  async _forEach(manyCtx: any[]) {
+    for (const ctx of manyCtx) {
+      await this.visit(ctx)
+    }
+  }
 }
 
 export default GlossaInterpreter

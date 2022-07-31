@@ -249,11 +249,13 @@ class GlossaParser extends CstParser {
     this.CONSUME(tokenMap.Then)
     this.AT_LEAST_ONE(() => this.SUBRULE(this.statement))
     this.MANY(() => this.SUBRULE(this.elseIfStmt))
-    this.OPTION(() => {
-      this.CONSUME(tokenMap.Else)
-      this.AT_LEAST_ONE1(() => this.SUBRULE1(this.statement))
-    })
+    this.OPTION(() => this.SUBRULE(this.elseStmt))
     this.CONSUME(tokenMap.EndIf)
+  })
+
+  private elseStmt = this.RULE('elseStmt', () => {
+    this.CONSUME(tokenMap.Else)
+    this.AT_LEAST_ONE1(() => this.SUBRULE1(this.statement))
   })
 
   private elseIfStmt = this.RULE('elseIfStmt', () => {
