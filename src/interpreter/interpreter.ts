@@ -2,6 +2,7 @@ import {
   AndExpressionCstChildren,
   ArgsCstChildren,
   AssignStmtCstChildren,
+  CaseStmtCstChildren,
   ConstDeclCstChildren,
   ConstDeclListCstChildren,
   DoUntilStmtCstChildren,
@@ -11,6 +12,7 @@ import {
   FactorCstChildren,
   ForStmtCstChildren,
   FuncBodyCstChildren,
+  FuncCallCstChildren,
   IfStmtCstChildren,
   ImmutableCstChildren,
   MutableCstChildren,
@@ -20,6 +22,7 @@ import {
   ReadStmtCstChildren,
   RelExpressionCstChildren,
   ScriptCstChildren,
+  SelectStmtCstChildren,
   StatementCstChildren,
   StringConcatCstChildren,
   SumExpressionCstChildren,
@@ -44,6 +47,7 @@ import {
   VarType,
 } from './types'
 import * as readline from 'readline'
+import SymbolTable from './SymbolTable'
 
 const rl = readline.createInterface({
   input: process.stdin, //or fileStream
@@ -55,13 +59,13 @@ const parser = new GlossaParser()
 const BaseCstVisitor = parser.getBaseCstVisitorConstructor()
 
 class GlossaInterpreter extends BaseCstVisitor {
-  private symbols: SymbolData[]
+  private symbols: SymbolTable<SymbolData>
 
   constructor() {
     super()
     this.validateVisitor()
 
-    this.symbols = []
+    this.symbols = new SymbolTable()
   }
 
   async script(ctx: ScriptCstChildren) {
@@ -88,8 +92,6 @@ class GlossaInterpreter extends BaseCstVisitor {
     if (ctx.varDeclaration) this.visit(ctx.varDeclaration)
 
     if (ctx.programBody) await this.visit(ctx.programBody)
-
-    // console.log(this.symbols)
   }
 
   async programBody(ctx: ProgramBodyCstChildren) {
@@ -114,7 +116,7 @@ class GlossaInterpreter extends BaseCstVisitor {
         isConstant: false,
       })) as SymbolData[]
 
-    this.symbols.push(...symbols)
+    symbols.forEach((symbol) => this.symbols.set(symbol.name, symbol))
   }
 
   value(ctx: ValueCstChildren): Partial<SymbolData> {
@@ -133,7 +135,7 @@ class GlossaInterpreter extends BaseCstVisitor {
   constDeclList(ctx: ConstDeclListCstChildren) {
     const symbols = ctx.constDecl.map((ctx) => this.visit(ctx)) as SymbolData[]
 
-    this.symbols.push(...symbols)
+    symbols.forEach((symbol) => this.symbols.set(symbol.name, symbol))
   }
 
   constDecl(ctx: ConstDeclCstChildren) {
@@ -156,6 +158,7 @@ class GlossaInterpreter extends BaseCstVisitor {
     if (ctx.readStmt) await this.visit(ctx.readStmt)
     if (ctx.writeStmt) await this.visit(ctx.writeStmt)
     if (ctx.assignStmt) this.visit(ctx.assignStmt)
+    if (ctx.ifStmt) this.visit(ctx.ifStmt)
     if (ctx.forStmt) this.visit(ctx.forStmt)
     if (ctx.whileStmt) await this.visit(ctx.whileStmt)
     if (ctx.doUntilStmt) await this.visit(ctx.doUntilStmt)
@@ -204,8 +207,17 @@ class GlossaInterpreter extends BaseCstVisitor {
     return ctx.Not ? !val : val
   }
 
+  funcCall(ctx: FuncCallCstChildren) {
+    const argValues = this.visit(ctx.args)
+  }
+
   relExpression(ctx: RelExpressionCstChildren) {
     const sumExpVal = this.visit(ctx.sumExpression[0])
+
+    if (ctx.Equal) {
+      const rightVal = this.visit(ctx.sumExpression[1])
+      return sumExpVal === rightVal
+    }
 
     if (ctx.RelOp) {
       const op = ctx.RelOp[0].image
@@ -266,7 +278,7 @@ class GlossaInterpreter extends BaseCstVisitor {
 
   mutable(ctx: MutableCstChildren) {
     const symbolName = ctx.Identifier[0].image
-    const symbol = this.symbols.find((symbol) => symbolName === symbol.name)
+    const symbol = this.symbols.get(symbolName)
 
     if (symbol === undefined) throw new Error(`Symbol not found ${symbolName}`)
 
@@ -340,9 +352,18 @@ class GlossaInterpreter extends BaseCstVisitor {
     return false
   }
 
-  selectStmt(ctx) {}
+  async selectStmt(ctx: SelectStmtCstChildren) {
+    const val = this.visit(ctx.expression)
 
-  caseStmt(ctx) {}
+    if (ctx.caseStmt) {
+    }
+
+    if (ctx.Else) {
+      await this._forEach(ctx.statement!)
+    }
+  }
+
+  caseStmt(ctx: CaseStmtCstChildren) {}
 
   forStmt(ctx: ForStmtCstChildren) {
     const from = this.visit(ctx.expression[0])
@@ -359,7 +380,7 @@ class GlossaInterpreter extends BaseCstVisitor {
     }
 
     // add symbol
-    this.symbols.push(symbol)
+    this.symbols.set(symbol.name, symbol)
 
     for (let i = from; i < to; i += step) {
       symbol.value = i
@@ -367,7 +388,7 @@ class GlossaInterpreter extends BaseCstVisitor {
     }
 
     // remove symbol
-    this.symbols = this.symbols.filter((curSymbol) => curSymbol !== symbol)
+    this.symbols.delete(symbol.name)
   }
 
   async whileStmt(ctx: WhileStmtCstChildren) {

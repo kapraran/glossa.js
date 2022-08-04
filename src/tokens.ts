@@ -254,7 +254,7 @@ _addToken({ name: TokenName.RSquare, pattern: /]/ })
 _addToken({ name: TokenName.LParen, pattern: /\(/ })
 _addToken({ name: TokenName.RParen, pattern: /\)/ })
 _addToken({ name: TokenName.Equal, pattern: /=/ })
-_addToken({ name: TokenName.AssignOp, pattern: /<\-\-/ })
+_addToken({ name: TokenName.AssignOp, pattern: /(<\-|←)/ })
 _addToken({ name: TokenName.DbDots, pattern: /\.\./ })
 
 _addToken({

@@ -249,12 +249,21 @@ export type ImmutableCstChildren = {
   LParen?: IToken[];
   expression?: ExpressionCstNode[];
   RParen?: IToken[];
-  Identifier?: IToken[];
-  args?: ArgsCstNode[];
+  funcCall?: FuncCallCstNode[];
   IntegerVal?: IToken[];
   RealVal?: IToken[];
   StringVal?: IToken[];
   BooleanVal?: IToken[];
+};
+
+export interface FuncCallCstNode extends CstNode {
+  name: "funcCall";
+  children: FuncCallCstChildren;
+}
+
+export type FuncCallCstChildren = {
+  Identifier: IToken[];
+  args: ArgsCstNode[];
 };
 
 export interface AssignStmtCstNode extends CstNode {
@@ -504,6 +513,7 @@ export interface ICstNodeVisitor<IN, OUT> extends ICstVisitor<IN, OUT> {
   factor(children: FactorCstChildren, param?: IN): OUT;
   mutable(children: MutableCstChildren, param?: IN): OUT;
   immutable(children: ImmutableCstChildren, param?: IN): OUT;
+  funcCall(children: FuncCallCstChildren, param?: IN): OUT;
   assignStmt(children: AssignStmtCstChildren, param?: IN): OUT;
   writeStmt(children: WriteStmtCstChildren, param?: IN): OUT;
   ifStmt(children: IfStmtCstChildren, param?: IN): OUT;

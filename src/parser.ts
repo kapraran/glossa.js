@@ -215,17 +215,17 @@ class GlossaParser extends CstParser {
           this.CONSUME(tokenMap.RParen)
         },
       },
-      {
-        ALT: () => {
-          this.CONSUME(tokenMap.Identifier)
-          this.SUBRULE(this.args)
-        },
-      },
+      { ALT: () => this.SUBRULE(this.funcCall) },
       { ALT: () => this.CONSUME(tokenMap.IntegerVal) },
       { ALT: () => this.CONSUME(tokenMap.RealVal) },
       { ALT: () => this.CONSUME(tokenMap.StringVal) },
       { ALT: () => this.CONSUME(tokenMap.BooleanVal) },
     ])
+  })
+
+  private funcCall = this.RULE('funcCall', () => {
+    this.CONSUME(tokenMap.Identifier)
+    this.SUBRULE(this.args)
   })
 
   private assignStmt = this.RULE('assignStmt', () => {
@@ -279,10 +279,22 @@ class GlossaParser extends CstParser {
 
   private caseStmt = this.RULE('caseStmt', () => {
     this.CONSUME(tokenMap.Case)
-    this.AT_LEAST_ONE_SEP({
-      SEP: tokenMap.Comma,
-      DEF: () => this.SUBRULE(this.intOrRange),
-    })
+    this.OR([
+      {
+        ALT: () => {
+          this.CONSUME(tokenMap.RelOp)
+          this.SUBRULE(this.expression)
+        },
+      },
+      {
+        ALT: () => {
+          this.AT_LEAST_ONE_SEP({
+            SEP: tokenMap.Comma,
+            DEF: () => this.SUBRULE(this.intOrRange),
+          })
+        },
+      },
+    ])
     this.AT_LEAST_ONE(() => this.SUBRULE(this.statement))
   })
 
