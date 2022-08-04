@@ -1,4 +1,5 @@
 export enum VarType {
+  INVALID,
   INTEGER,
   FLOAT,
   STRING,

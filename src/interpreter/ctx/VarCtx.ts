@@ -1,42 +1,34 @@
-import { VarType } from '../types'
+import VariableDefinition from '../definitions/VariableDefinition'
 
-const TEMP_VAR_PREFIX = '$tempVar__'
-
-type ConstructorOptions = {
-  isConstant?: boolean
+type ValueReference = {
+  value: any
 }
 
 export default class VarCtx {
-  public name: string
-  public type: VarType
+  public readonly definition: VariableDefinition
+  private _reference: ValueReference
 
-  public isConstant: boolean
-
-  private static tempID = 0
-
-  constructor(
-    name: string,
-    type: VarType,
-    { isConstant }: ConstructorOptions = {}
-  ) {
-    this.name = name
-    this.type = type
-
-    this.isConstant = isConstant || false
-  }
-
-  get isTemporary(): boolean {
-    return this.name.startsWith(TEMP_VAR_PREFIX)
+  constructor(definition: VariableDefinition, value?: ValueReference) {
+    this.definition = definition
+    this._reference = value || { value: undefined }
   }
 
   set value(value: any) {
-    if (this.isConstant) throw new Error('Cannot set value to a constant')
-    this.value = value
+    if (this.definition.isConstant)
+      throw new Error('Cannot set value to a constant')
+    this._reference.value = value
   }
 
-  public static CreateTemporary(type: VarType) {
-    const tempVarName = `${TEMP_VAR_PREFIX}${this.tempID++}`
-    const tempVar = new VarCtx(tempVarName, type)
-    return tempVar
+  get value(): any {
+    return this._reference.value
+  }
+
+  set reference(reference: ValueReference) {
+    // TODO check compatibility
+    this._reference = reference
+  }
+
+  get reference(): ValueReference {
+    return this._reference
   }
 }
