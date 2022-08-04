@@ -13,10 +13,12 @@ import {
   ForStmtCstChildren,
   FuncBodyCstChildren,
   FuncCallCstChildren,
+  FuncCstChildren,
   IfStmtCstChildren,
   ImmutableCstChildren,
   MutableCstChildren,
   ProcedureBodyCstChildren,
+  ProcedureCstChildren,
   ProgramBodyCstChildren,
   ProgramCstChildren,
   ReadStmtCstChildren,
@@ -31,6 +33,7 @@ import {
   UnaryExpressionCstChildren,
   UnaryRelExpressionCstChildren,
   ValueCstChildren,
+  VarConstDeclBlockCstChildren,
   VarDeclarationCstChildren,
   WhileStmtCstChildren,
   WriteStmtCstChildren,
@@ -70,7 +73,19 @@ class GlossaInterpreter extends BaseCstVisitor {
 
   async script(ctx: ScriptCstChildren) {
     try {
-      await this.visit(ctx.program)
+      // await this.visit(ctx.program)
+
+      if (ctx.procedure) {
+        for (const pCtx of ctx.procedure) {
+          await this.visit(pCtx)
+        }
+      }
+
+      if (ctx.func) {
+        for (const pCtx of ctx.func) {
+          await this.visit(pCtx)
+        }
+      }
     } catch (error) {
       console.error(error)
       rl.close()
@@ -81,6 +96,12 @@ class GlossaInterpreter extends BaseCstVisitor {
     const programName: string = ctx.Identifier[0].image
     console.log(`Program name is "${programName}"`)
 
+    if (ctx.varConstDeclBlock) this.visit(ctx.varConstDeclBlock)
+
+    if (ctx.programBody) await this.visit(ctx.programBody)
+  }
+
+  async varConstDeclBlock(ctx: VarConstDeclBlockCstChildren) {
     if (ctx.constDeclList && ctx.constDeclList.length > 1)
       return console.error('Too many Const blocks')
 
@@ -90,8 +111,6 @@ class GlossaInterpreter extends BaseCstVisitor {
     if (ctx.constDeclList) this.visit(ctx.constDeclList)
 
     if (ctx.varDeclaration) this.visit(ctx.varDeclaration)
-
-    if (ctx.programBody) await this.visit(ctx.programBody)
   }
 
   async programBody(ctx: ProgramBodyCstChildren) {
@@ -407,9 +426,13 @@ class GlossaInterpreter extends BaseCstVisitor {
     }
   }
 
-  procedure(ctx) {}
+  procedure(ctx: ProcedureCstChildren) {
+    console.log(`Procedure ${ctx.Identifier[0].image}`)
+  }
 
-  func(ctx) {}
+  func(ctx: FuncCstChildren) {
+    console.log(`Function ${ctx.Identifier[0].image}`)
+  }
 
   parameters(ctx) {}
 

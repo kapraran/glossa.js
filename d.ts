@@ -19,9 +19,18 @@ export interface ProgramCstNode extends CstNode {
 export type ProgramCstChildren = {
   Program: IToken[];
   Identifier: IToken[];
+  varConstDeclBlock?: VarConstDeclBlockCstNode[];
+  programBody: ProgramBodyCstNode[];
+};
+
+export interface VarConstDeclBlockCstNode extends CstNode {
+  name: "varConstDeclBlock";
+  children: VarConstDeclBlockCstChildren;
+}
+
+export type VarConstDeclBlockCstChildren = {
   constDeclList?: ConstDeclListCstNode[];
   varDeclaration?: VarDeclarationCstNode[];
-  programBody: ProgramBodyCstNode[];
 };
 
 export interface ProgramBodyCstNode extends CstNode {
@@ -346,7 +355,9 @@ export interface CaseStmtCstNode extends CstNode {
 
 export type CaseStmtCstChildren = {
   Case: IToken[];
-  intOrRange: IntOrRangeCstNode[];
+  RelOp?: IToken[];
+  expression?: ExpressionCstNode[];
+  intOrRange?: IntOrRangeCstNode[];
   Comma?: IToken[];
   statement: StatementCstNode[];
 };
@@ -401,8 +412,7 @@ export type ProcedureCstChildren = {
   Procedure: IToken[];
   Identifier: IToken[];
   parameters: ParametersCstNode[];
-  constDeclList?: ConstDeclListCstNode[];
-  varDeclaration?: VarDeclarationCstNode[];
+  varConstDeclBlock?: VarConstDeclBlockCstNode[];
   procedureBody: ProcedureBodyCstNode[];
 };
 
@@ -417,8 +427,7 @@ export type FuncCstChildren = {
   parameters: ParametersCstNode[];
   Colon: IToken[];
   DeclRetTypeSpecifier: IToken[];
-  constDeclList?: ConstDeclListCstNode[];
-  varDeclaration?: VarDeclarationCstNode[];
+  varConstDeclBlock?: VarConstDeclBlockCstNode[];
   funcBody: FuncBodyCstNode[];
 };
 
@@ -493,6 +502,7 @@ export type StringConcatCstChildren = {
 export interface ICstNodeVisitor<IN, OUT> extends ICstVisitor<IN, OUT> {
   script(children: ScriptCstChildren, param?: IN): OUT;
   program(children: ProgramCstChildren, param?: IN): OUT;
+  varConstDeclBlock(children: VarConstDeclBlockCstChildren, param?: IN): OUT;
   programBody(children: ProgramBodyCstChildren, param?: IN): OUT;
   varDeclaration(children: VarDeclarationCstChildren, param?: IN): OUT;
   typedVarDeclList(children: TypedVarDeclListCstChildren, param?: IN): OUT;

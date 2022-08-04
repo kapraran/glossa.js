@@ -24,15 +24,17 @@ class GlossaParser extends CstParser {
   private program = this.RULE('program', () => {
     this.CONSUME(tokenMap.Program)
     this.CONSUME(tokenMap.Identifier)
-    this.OPTION(() => {
-      this.AT_LEAST_ONE(() => {
-        this.OR([
-          { ALT: () => this.SUBRULE(this.constDeclList) },
-          { ALT: () => this.SUBRULE(this.varDeclaration) },
-        ])
-      })
-    })
+    this.OPTION(() => this.SUBRULE(this.varConstDeclBlock))
     this.SUBRULE(this.programBody)
+  })
+
+  private varConstDeclBlock = this.RULE('varConstDeclBlock', () => {
+    this.AT_LEAST_ONE(() => {
+      this.OR([
+        { ALT: () => this.SUBRULE(this.constDeclList) },
+        { ALT: () => this.SUBRULE(this.varDeclaration) },
+      ])
+    })
   })
 
   private programBody = this.RULE('programBody', () => {
@@ -332,14 +334,7 @@ class GlossaParser extends CstParser {
     this.CONSUME(tokenMap.Procedure)
     this.CONSUME(tokenMap.Identifier)
     this.SUBRULE(this.parameters)
-    this.OPTION(() => {
-      this.AT_LEAST_ONE(() => {
-        this.OR([
-          { ALT: () => this.SUBRULE(this.constDeclList) },
-          { ALT: () => this.SUBRULE(this.varDeclaration) },
-        ])
-      })
-    })
+    this.OPTION(() => this.SUBRULE(this.varConstDeclBlock))
     this.SUBRULE(this.procedureBody)
   })
 
@@ -349,14 +344,7 @@ class GlossaParser extends CstParser {
     this.SUBRULE(this.parameters)
     this.CONSUME(tokenMap.Colon)
     this.CONSUME(tokenMap.DeclRetTypeSpecifier)
-    this.OPTION(() => {
-      this.AT_LEAST_ONE(() => {
-        this.OR([
-          { ALT: () => this.SUBRULE(this.constDeclList) },
-          { ALT: () => this.SUBRULE(this.varDeclaration) },
-        ])
-      })
-    })
+    this.OPTION(() => this.SUBRULE(this.varConstDeclBlock))
     this.SUBRULE(this.funcBody)
   })
 
